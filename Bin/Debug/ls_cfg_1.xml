@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+	<!-- 本地服务器,ls目前没有启动Server服务器 -->
+	<local id="2002" host="127.0.0.1" port="0" type="2"></local>
+	<!-- 本地Client_Connect_Ws，连接世界服 -->
+	<remote id="3001" host="127.0.0.1" port="9903" type="3"></remote>
+</items>

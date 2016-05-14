@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<root>
+	<item id="10001" scene_type="1" zonefile="main_zone.xml" scenefile="main_scene.xml"/>
+</root>
+
