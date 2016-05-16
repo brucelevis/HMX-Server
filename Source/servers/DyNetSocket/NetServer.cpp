@@ -81,8 +81,8 @@ void NetServer::SetHandlerDefault()
 void NetServer::SetHandler(PNetServerEnterHandler pEnter, PNetServerOnMsgHandler pOnMsg, PNetServerExistHandler pExit)
 {
 	m_pOnEnter = pEnter;
-	m_pOnExit = pExit;
 	m_pOnMsg = pOnMsg;
+	m_pOnExit = pExit;
 }
 
 void NetServer::Run()
@@ -182,7 +182,6 @@ void NetServer::OnUpdateRecived()
 				(m_pOnExit)(*pSocket);
 				m_vecUsedSocket.erase(m_vecUsedSocket.begin() + nIndex);
 				pSocket->Disconnect();
-				pSocket->Clear();
 				SetAccept(*pSocket);
 				nIndex--;
 				nSocketSize--;
@@ -224,6 +223,7 @@ void NetServer::HandleAccept(const boost::system::error_code& rError, NetSocket*
 	}
 
 	mutex::scoped_lock lock(m_cClientListMutex);
+	pSocket->Clear();
 	m_vecAcceptSocket.push_back(pSocket);
 	pSocket->Run();
 	lock.unlock();

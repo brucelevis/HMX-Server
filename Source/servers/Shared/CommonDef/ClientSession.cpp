@@ -228,6 +228,7 @@ void ClientSessionMgr::RemoveSession(int32 nFepSessionID)
 	ClientSessionMapType::iterator it = m_mapClientSession.find(nFepSessionID);
 	if(it != m_mapClientSession.end())
 	{
+		printf("[NOTE]:Remove SessionID From Mgr,SessionID:%d\n", nFepSessionID);
 		ClientSession* pSession = it->second;
 		m_mapClientSession.erase(it);
 		s_cClientSessionFactory.DestroyObj(pSession);

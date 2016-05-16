@@ -145,15 +145,6 @@ public:
 
 	/*
 	 *
-	 *	Detail: 恢复到构造函数那种状态 
-	 *
-	 *  Created by hzd 2013-1-20
-	 *
-	 */
-	void Clear();
-
-	/*
-	 *
 	 *	Detail: 启动Socket，可以进入收发数据 
 	 *
 	 *  Created by hzd 2013-1-21
@@ -241,6 +232,15 @@ private:
 	 *
 	 */
 	void HandleClose(const boost::system::error_code& error);
+	
+	/*
+	 *
+	 *	Detail: 恢复到构造函数那种状态 
+	 *
+	 *  Created by hzd 2013-1-20
+	 *
+	 */
+	void Clear();
 
 	/*
 	 *

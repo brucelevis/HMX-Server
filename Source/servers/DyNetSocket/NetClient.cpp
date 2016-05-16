@@ -64,6 +64,7 @@ void NetClient::HandleConnect(const boost::system::error_code& error,NetSocket* 
 		// 这里改为统一由ServerConnectMgr管理，解决线程安全问题，逻辑部分统一由外主逻辑线程处理  
 		//(m_pOnMsgConnected)(*pSocket);
 		printf("[NOTE]:Connected Success.................ok\n");
+		pSocket->Clear();
 		pSocket->Run();// 绑定该线程读头消息，这个操作必须是该线程 
 		printf("[NOTE]:Socket io event start.................ok\n");
 	}
@@ -114,7 +115,6 @@ void NetClient::Update()
 		{
 			(m_pOnMsgDisconnect)(m_rGameSocket);
 			m_rGameSocket.Disconnect();
-			m_rGameSocket.Clear();
 		}
 		break;
 	case MSG_READ_OK:

@@ -57,9 +57,16 @@ void NetSocket::ReadBody()
 
 void NetSocket::Disconnect()
 {
+	m_cCloseTimer.cancel();
+	m_cCloseTimer.expires_from_now(boost::posix_time::seconds(1));
+	m_cCloseTimer.async_wait(boost::bind(&NetSocket::HandleClose, this, boost::asio::placeholders::error));
+}
+
+void NetSocket::HandleClose(const boost::system::error_code& error)
+{
+
 #ifdef WIN32
-	boost::system::error_code ec;
-	HandleClose(ec);
+
 #else
 	try
 	{
@@ -69,17 +76,9 @@ void NetSocket::Disconnect()
 	catch (...)
 	{
 	}
-
-	m_cCloseTimer.cancel();
-	m_cCloseTimer.expires_from_now(boost::posix_time::seconds(1));
-	m_cCloseTimer.async_wait(boost::bind(&NetSocket::HandleClose, this, boost::asio::placeholders::error));
-
 #endif // WIN32
 
-}
 
-void NetSocket::HandleClose(const boost::system::error_code& error)
-{
 	try
 	{
 		boost::asio::socket_base::linger option(true, 0);
@@ -89,7 +88,9 @@ void NetSocket::HandleClose(const boost::system::error_code& error)
 		tcp::socket::close(ec2); // 这个不会再收到消息回调 end 
 	} catch(...)
 	{
+
 	}
+
 }
 
 EMsgRead NetSocket::ReadMsg(NetMsgHead** pMsg,int32& nSize)
