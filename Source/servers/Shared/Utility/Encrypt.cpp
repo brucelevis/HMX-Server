@@ -345,9 +345,19 @@ void  Encrypt::RandKey(char o_arrKey[MAX_ENCRYPT_LENTH])
 
 int32 Encrypt::XorCode(uint32 nRandNum, const char arrKey[MAX_ENCRYPT_LENTH], char *pSrc, uint32 nSrcLen)
 {
-	int32 k = 0;
+	// 跳过头协议进行加密 
+	if (nSrcLen > sizeof(NetMsgHead))
+	{
+		nSrcLen -= sizeof(NetMsgHead);
+		pSrc += sizeof(NetMsgHead);
+	}
+	else
+	{
+		nSrcLen = 0;
+	}	
+	
 	int32 int_num = nSrcLen - (nSrcLen % sizeof(uint32));
-	int32 i = 0;
+	int32 k = 0,i = 0; 
 	for (; i < (int32)nSrcLen;)
 	{
 		if(i < int_num)

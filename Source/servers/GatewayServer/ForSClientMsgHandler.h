@@ -49,6 +49,8 @@ public:
 	// 
 	void ServerToClient(BaseSession* pSessioin,const NetMsgHead* pHead,int32 nSize);
 
+	void NofityClientExit(BaseSession* pSessioin, const NetMsgHead* pHead, int32 nSize);
+
 private:
 
 	bool m_bIsWsMsg;

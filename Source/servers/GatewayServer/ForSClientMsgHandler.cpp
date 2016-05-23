@@ -9,6 +9,7 @@
 #include "ClientSession.h"
 #include "ServerConnectMgr.h"
 #include "ServerClientCommon.h"
+#include "ForClientMsgHandler.h"
 
 
 ForSClientMsgHandler::ForSClientMsgHandler():m_bIsWsMsg(true)
@@ -23,6 +24,7 @@ ForSClientMsgHandler::ForSClientMsgHandler():m_bIsWsMsg(true)
 	REGISTER_INTERNAL_MESSAGE(PRO_SS_REP_SERVERINFO_LIST,SSRepServerInfoList,RepServerInfoList);	// 服务器管理信息协议 
 	REGISTER_INTERNAL_MESSAGE(PRO_SS_NOFTTY_SERVERID,SSSessionNofitySInfo,NofityClientSessionInfo); // 同步分配服务器ID 
 	REGISTER_INTERNAL_MESSAGE(PRO_SS_REP_PING_S,SSRepPingS,RepPingToS); // ping 
+	REGISTER_INTERNAL_MESSAGE(PRO_SS_REQ_CLIENT_EXIT, SSNofityClientExit, NofityClientExit);
 
 #undef REGISTER_INTERNAL_MESSAGE
 
@@ -96,7 +98,7 @@ void ForSClientMsgHandler::NofityClientSessionInfo(BaseSession* pSession, const 
 	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(nClientSessionID);
 	if (pClientSession == NULL)
 	{
-		printf("Not Found ClientSession\n");
+		printf("[ERROR]:Not Found ClientSession\n");
 		return;
 	}
 
@@ -126,4 +128,19 @@ void ForSClientMsgHandler::ServerToClient(BaseSession* pSessioin,const NetMsgHea
 	}
 	pClientSession->SendMsg(const_cast<NetMsgHead*>(pHead),nSize);
 
+}
+
+void ForSClientMsgHandler::NofityClientExit(BaseSession* pSessioin, const NetMsgHead* pMsg, int32 nSize)
+{
+	const SSNofityClientExit* packet = static_cast<const SSNofityClientExit*>(pMsg);
+
+	// 通知Ws,Ws再通知ls,dp，如果玩家在ss中，则会通知 
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(packet->nClientSessionID);
+	if (pClientSession == NULL)
+	{
+		ASSERT(pClientSession);
+		return;
+	}
+	pClientSession->Exist();
+	
 }

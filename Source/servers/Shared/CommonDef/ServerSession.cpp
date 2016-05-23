@@ -18,16 +18,16 @@ ServerSession::~ServerSession()
 {
 }
 
-void ServerSession::SendMsg(NetMsgHead* pMsg,int32 nSize)
+void ServerSession::SendMsg(NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback)
 {
-	m_pSocket->ParkMsg(pMsg, nSize);
+	m_pSocket->ParkMsg(pMsg, nSize, pCallback);
 	m_pSocket->SendMsg();
 }
 
 void ServerSession::Exist()
 {
 	printf("[INFO]:ServerSession Exist\n");
-	m_pSocket->SetWillColse();
+	m_pSocket->OnEventColse();
 }
 
 void ServerSession::SetStatus(int32 nStatus)

@@ -16,7 +16,7 @@ public:
 
 	}
 
-	virtual void SendMsg( NetMsgHead* pMsg,int32 nSize) = 0;
+	virtual void SendMsg( NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL) = 0;
 
 	virtual void Exist() = 0;
 

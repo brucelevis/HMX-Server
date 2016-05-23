@@ -159,7 +159,7 @@ bool Init(const std::string& strCfgXml)
 	gDealCommon = new DeallineAsync(INTEVAL_COMMON_TIME, 0, InteravalIoUpdate);
 	gDealCommon->Start();
 
-	printf("Server Start Success !\n");
+	printf("[INFO]:Server Start Success !\n");
 
 	return true;
 

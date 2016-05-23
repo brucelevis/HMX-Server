@@ -20,7 +20,7 @@ ClientNetHandler::~ClientNetHandler(void)
 
 void ClientNetHandler::SendRequestClose(ClientPlayer* gPlayer)
 {
-	gPlayer->GetSocket()->SetWillColse();
+	gPlayer->GetSocket()->OnEventColse();
 }
 
 void ClientNetHandler::SendEncrypt(ClientPlayer* gPlayer)

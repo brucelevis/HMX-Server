@@ -105,6 +105,7 @@ struct SSNofityClientExit : public NetMsgHead
 		E_REASON_PACKAGE_ERROR,			// 非法协议 
 		E_REASON_SEND_ERROR,			// 向Client发送时出错 
 		E_REASON_SWITCH_SCENE,			// 切换场景（这个仅对Scene，dp）
+		E_REASON_REPEAT_CHARACTER = 99,		// 重复登录
 	};
 
 	int32 nReason;

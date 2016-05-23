@@ -89,6 +89,50 @@ public:
 };
 
 
+// socket excute callback base  
+struct SocketCallbackBase
+{
+public:
+	SocketCallbackBase(int32 arg)
+	{
+		static int32 nIncraseID = 1000;
+		nIncraseID++;
+		m_nCallbackID = nIncraseID;
+	}
+
+	virtual void Finished(int32 nCallbackID)
+	{
+
+	}
+
+	int32 GetCallbackID()
+	{
+		return m_nCallbackID;
+	}
+
+private:
+
+	int32 m_nCallbackID;
+
+};
+
+// 回调协议 
+const int32 PRO_CALLBACK = 111;
+struct stCallbackMsg : public NetMsgHead
+{
+	stCallbackMsg():NetMsgHead(PRO_CALLBACK)
+	{
+		nRepCallbackID = 0;
+	}
+	
+	inline int32 GetPackLength()const
+	{
+		return sizeof(*this);
+	}
+
+	int32 nRepCallbackID;
+};
+
 
 class NetSocket : public tcp::socket
 {
@@ -114,7 +158,7 @@ public:
 	 *  Created by hzd 2013-1-21
 	 *
 	 */
-	void ParkMsg(NetMsgHead* pMsg,int32 nLength);
+	void ParkMsg(NetMsgHead* pMsg,int32 nLength,SocketCallbackBase* call = NULL);
 
 	/*
 	 *
@@ -168,7 +212,7 @@ public:
 	 * Copyright (c) Created by hzd 2013-4-29.All rights reserved
 	 *
 	 */
-	void SetWillColse();
+	void OnEventColse();
 
 	/*
 	 *
@@ -210,6 +254,12 @@ public:
 	 * @Author:hzd 2013:11:19
 	 *------------------------------------------------------------------*/
 	int32 ErrorCode(std::string& error);
+
+	// 自定义事件 
+	void OnEventCustom();
+
+
+	void RunCallBack(int32 nCallbackID);
 
 private:
 
@@ -287,6 +337,11 @@ private:
 	 */
 	void HandleWait(const boost::system::error_code& error);
 
+	/*
+	 * 获得事件(获得一次后，记录事件会被清掉)	
+	 */
+	bool GetEvents(std::vector<int32>& o_vecEvents);
+
 private:
 
 	int32				m_nID;				// socketID， 一个进程所的 Socket 唯一ID从0开始 
@@ -329,6 +384,10 @@ private:
 	 * @Author:hzd 2013:11:19
 	 *------------------------------------------------------------------*/
 	int32				m_errorCode;		// 错误代码  
+
+	std::map<int32,SocketCallbackBase*> m_mapCallback; // 自动完成后回调
+
+	std::vector<int32>	m_vecEvents;	// 事件 
 
 };
 

@@ -2,6 +2,7 @@
 #define SWA_MD5_H_
 #include "BaseDefine.h"
 #include "CommonDefine.h"
+#include "NetConfig.h"
 
 #include <string>
 #include <fstream>

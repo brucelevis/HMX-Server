@@ -119,8 +119,25 @@ void NetClient::Update()
 		break;
 	case MSG_READ_OK:
 		{
-			(m_pOnMsgRecevied)(m_rGameSocket,pMsg,nBodyLen);
-			m_rGameSocket.RemoveMsg(PACKAGE_HEADER_SIZE + nBodyLen );
+			if (pMsg->nType == PRO_CALLBACK)
+			{
+				const stCallbackMsg* rev = static_cast<const stCallbackMsg*>(pMsg);
+				m_rGameSocket.RunCallBack(rev->nRepCallbackID);
+				printf("[INFO]:Callback Local ID :%d\n", rev->nRepCallbackID);
+			}
+			else
+			{
+				(m_pOnMsgRecevied)(m_rGameSocket, pMsg, nBodyLen);
+				if (pMsg->nCallbackID) // 需要回调 
+				{
+					stCallbackMsg callMsg;
+					callMsg.nRepCallbackID = pMsg->nCallbackID;
+					m_rGameSocket.ParkMsg(&callMsg, callMsg.GetPackLength());
+					m_rGameSocket.SendMsg();
+					printf("[INFO]:Callback Remote ID :%d ,From Pro %d\n", pMsg->nCallbackID, pMsg->nType);
+				}
+				m_rGameSocket.RemoveMsg(PACKAGE_HEADER_SIZE + nBodyLen);
+			}
 		}
 		break;
 	case MSG_READ_WAITTING:

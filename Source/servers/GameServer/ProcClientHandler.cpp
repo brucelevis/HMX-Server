@@ -24,7 +24,7 @@ void ProcClientHandler::ReqChatWorld(BaseSession* pSession, const NetMsgHead* pM
 	const C2SCharWorld* pPacket = static_cast<const C2SCharWorld*>(pMsg);
 	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nClientSessionID);
 	ASSERT(pClientSession);
-	int32 nID = pClientSession->SessionID();
+	int32 nID = pClientSession->GetSessionID();
 	stringstream ss;
 	ss << nID;
 	S2CRepCharWorld sMsg;

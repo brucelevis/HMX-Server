@@ -173,6 +173,20 @@ void NetServer::OnUpdateRecived()
 		if(!pSocket)
 			continue;
 		
+		// 处理事件
+		std::vector<int32> vecEvents;
+		if (pSocket->GetEvents(vecEvents))
+		{
+			for (std::vector<int32>::iterator it = vecEvents.begin(); it != vecEvents.end();++it)
+			{
+				int32 nEvent = *it;
+				switch (nEvent)
+				{
+				default: // todo 
+					break;
+				}
+			}
+		}
 		
 		switch(pSocket->ReadMsg(&pMsg,nMsgBodyLen))
 		{
@@ -183,13 +197,29 @@ void NetServer::OnUpdateRecived()
 				m_vecUsedSocket.erase(m_vecUsedSocket.begin() + nIndex);
 				pSocket->Disconnect();
 				SetAccept(*pSocket);
-				nIndex--;
-				nSocketSize--;
+				nIndex--;nSocketSize--;
 			}
 				break;
 			case MSG_READ_OK: // 收到正常的数据请求 
 			{
-				(m_pOnMsg)(*pSocket, pMsg,nMsgBodyLen);
+				if (pMsg->nType == PRO_CALLBACK)
+				{
+					const stCallbackMsg* rev = static_cast<const stCallbackMsg*>(pMsg);
+					pSocket->RunCallBack(rev->nRepCallbackID);
+					printf("[INFO]:Callback Local ID :%d\n", rev->nRepCallbackID);
+				}
+				else
+				{
+					(m_pOnMsg)(*pSocket,pMsg,nMsgBodyLen);
+					if (pMsg->nCallbackID) // 需要回调 
+					{
+						stCallbackMsg callMsg;
+						callMsg.nRepCallbackID = pMsg->nCallbackID;
+						pSocket->ParkMsg(&callMsg,callMsg.GetPackLength());
+						pSocket->SendMsg();
+						printf("[INFO]:Callback Remote ID :%d ,From Pro %d\n", pMsg->nCallbackID, pMsg->nType);
+					}
+				}
 				pSocket->RemoveMsg(PACKAGE_HEADER_SIZE + nMsgBodyLen);
 			}
 				break;

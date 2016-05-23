@@ -101,9 +101,14 @@ typedef vector< int32 >::iterator IntIter;
 
 struct NetMsgHead
 {
-	NetMsgHead(uint32 _nType) :nType(_nType){}
+	NetMsgHead(uint32 _nType) :nType(_nType)
+	{
+		nClientSessionID = 0;
+		nCallbackID = 0;
+	}
 	int32 nType;			// 协议 
-	int32 nClientSessionID; // 客户端 sessionID  
+	int32 nClientSessionID; // 客户端 sessionID
+	int32 nCallbackID;		// 回调ID 
 };
 
 #pragma pack(pop)

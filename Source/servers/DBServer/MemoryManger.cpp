@@ -77,19 +77,16 @@ void MemoryManager::Update()
 
 }
 
-StUserDataForDp* MemoryManager::GetUser(int64 nCharID)
+StUserDataForDp* MemoryManager::GetUser(int64 nCharID, bool bQuery)
 {
-	UserMainMemoryMapType::iterator it = m_mapUserMainMemory.find(nCharID);
-	if(it != m_mapUserMainMemory.end())
+	StUserDataMemory* pUserDataMemory = GetUserMem(nCharID,bQuery);
+	if (pUserDataMemory)
 	{
-		StUserDataMemory* pUserDataMemory = it->second;
-		if (pUserDataMemory->nInit != 1) return NULL;
 		pUserDataMemory->nLastAsk = Utility::NowTime();
 		return &pUserDataMemory->sUserData;
 	}
 	return NULL;
 }
-
 
 void MemoryManager::SaveNowByUID(int64 nUID)
 {
@@ -166,6 +163,22 @@ void MemoryManager::SaveNowByUID(int64 nUID)
 
 }
 
+int64 MemoryManager::GetUserIDBySessionID(int32 nSessionID)
+{
+	SessionIDUserIDMapType::iterator it = m_mapSessionIDUserID.find(nSessionID);
+	if (it != m_mapSessionIDUserID.end())
+		return it->second;
+	return 0;
+}
+
+void MemoryManager::RemoveSessionID(int32 nSessionID)
+{
+	SessionIDUserIDMapType::iterator it = m_mapSessionIDUserID.find(nSessionID);
+	if (it != m_mapSessionIDUserID.end())
+	{
+		m_mapSessionIDUserID.erase(it);
+	}
+}
 
 void MemoryManager::RemoveByUID(int64 nUID)
 {
@@ -175,29 +188,24 @@ void MemoryManager::RemoveByUID(int64 nUID)
 		StUserDataMemory* udm = it->second;
 		udm->Relase();
 		g_cUserMainDbFactory.DestroyObj(udm);
+		RemoveSessionID(it->second->nSessionID);
 		m_mapUserMainMemory.erase(it);
+		printf("[INFO]:Remove Mem ID:%lld\n", nUID);
 	}
 }
 
 
-StUserDataForDp* MemoryManager::GetUserDb(int64 nCharID, StCallBackInfo* pCbHandler)
+StUserDataForDp* MemoryManager::GetUserDb(int64 nCharID, int32 nSessionID, StCallBackInfo* pCbHandler)
 {
-	UserMainMemoryMapType::iterator it = m_mapUserMainMemory.find(nCharID);
-	if(it != m_mapUserMainMemory.end())
+
+	StUserDataForDp* pUserForDb = GetUser(nCharID);
+	if (pUserForDb)
 	{
-		StUserDataMemory* pUserDataMemory = it->second;
-		if (pUserDataMemory->nInit != 1)
-		{
-			// 数据初始化未完成，比如还在加载数据库数据中，或者中途加载中断
-			// 这样的数据，在update中，需要判断然后删除，让下一次查找再重新加载 
-			// 不能在此地方删除 
-			return NULL;
-		}
-		pUserDataMemory->nLastAsk = Utility::NowTime();
-		return &pUserDataMemory->sUserData;
-	}else
+		return pUserForDb;
+	}
+
 	{
-		if(StUserDataMemory* pUserDataMemory = g_cUserMainDbFactory.CreateObj(nCharID))
+		if(StUserDataMemory* pUserDataMemory = g_cUserMainDbFactory.CreateObj(nCharID,nSessionID))
 		{
 			int32 nowTime = Utility::NowTime();
 			pUserDataMemory->nInit = 0;
@@ -206,7 +214,8 @@ StUserDataForDp* MemoryManager::GetUserDb(int64 nCharID, StCallBackInfo* pCbHand
 			pUserDataMemory->nLastAsk = nowTime;
 			pUserDataMemory->pCallBack = pCbHandler;
 			m_mapUserMainMemory.insert(std::make_pair(nCharID,pUserDataMemory));
-
+			m_mapSessionIDUserID.insert(std::make_pair(nSessionID,nCharID));
+			printf("[INFO]:Add Mem ID:%lld\n", nCharID);
 			IDbBase* pDB = DbConnManager::Instance()->GetMainDB();
 			if (NULL == pDB)
 			{
@@ -218,7 +227,7 @@ StUserDataForDp* MemoryManager::GetUserDb(int64 nCharID, StCallBackInfo* pCbHand
 			{
 				struct MyCallBack : public MyDBCallBack
 				{
-					StUserDataMemory* pUserDataMemory;
+					int64 nCharID;
 					virtual void QueryResult(IDbRecordSet* pSet, int32 nCount)
 					{
 						const DbRecordSet* pRecordSet = static_cast<const DbRecordSet*>(pSet);
@@ -227,7 +236,6 @@ StUserDataForDp* MemoryManager::GetUserDb(int64 nCharID, StCallBackInfo* pCbHand
 							FLOG_WARRING(__FUNCTION__, __LINE__, "NOT Found In Data Character");
 							return;
 						}
-
 						const StCharacterDataTable* pCharDb = static_cast<const StCharacterDataTable*>(pRecordSet->GetRecordData(0));
 						if (pCharDb == NULL)
 						{
@@ -235,72 +243,73 @@ StUserDataForDp* MemoryManager::GetUserDb(int64 nCharID, StCallBackInfo* pCbHand
 							ASSERT(0);
 							return;
 						}
-						pUserDataMemory->sUserData.LoadCharacterDataForDp(*pCharDb);// 把数据加载到内存 
+						StUserDataForDp* sUserData = MemoryManager::Instance()->GetUser(nCharID,true);
+						if (sUserData == NULL)
+						{
+							FLOG_ERROR(__FUNCTION__, __LINE__, "Not Found User Mem");
+							ASSERT(0);
+							return;
+						}
+						sUserData->LoadCharacterDataForDp(*pCharDb);// 把数据加载到内存 
 					}
-
-					MyCallBack(StUserDataMemory* _pUserDataMemory) :pUserDataMemory(_pUserDataMemory)
+					MyCallBack(int64 _nCharID) :nCharID(_nCharID)
 					{
 					}
 				};
-
-				MyCallBack* myCallBack = new MyCallBack(pUserDataMemory);
-
+				MyCallBack* myCallBack = new MyCallBack(nCharID);
 				memset(SQL_BUFFER, 0, MAX_SQL_BUFFER);
 				SPRINTF(SQL_BUFFER, "CALL ZP_GET_USER(%lld);", nCharID);
 				SQL_BUFFER[MAX_SQL_BUFFER - 1] = '\0';
 				pDB->ExecAsyncSQL(SQL_BUFFER, myCallBack);
-
 			}
 
-			// 查询任务 
+			// 完成回调 
 			{
 				struct MyCallBack : public MyDBCallBack
 				{
-					StUserDataMemory* pUserDataMemory;
+					int64 nCharID;
 					virtual void QueryResult(IDbRecordSet* pSet, int32 nCount)
 					{
-						const DbRecordSet* pRecordSet = static_cast<const DbRecordSet*>(pSet);
-						if (pRecordSet->Rows() == 0)
+						StUserDataMemory* pUserDataMemory = MemoryManager::Instance()->GetUserMem(nCharID,true);
+						if (pUserDataMemory == NULL)
 						{
-							FLOG_WARRING(__FUNCTION__, __LINE__, "NOT Found In Data Quest");
+							ASSERT(pUserDataMemory);
 							return;
 						}
-
-						const StQuestDataTable* pQuestDb = static_cast<const StQuestDataTable*>(pRecordSet->GetRecordData(0));
-						if (pQuestDb == NULL)
-						{
-							FLOG_ERROR(__FUNCTION__, __LINE__, "Quest is null!");
-							ASSERT(0);
-							return;
-						}
-
-						// 保存数据到内存 
-						pUserDataMemory->sUserData.LoadQuestDataForDp(*pQuestDb);
 						pUserDataMemory->nInit = 1;
-
 						// 查询完毕，返回数据给前端 
 						DataCallbackToFrom(pUserDataMemory);
 					}
-
-					MyCallBack(StUserDataMemory* _pUserDataMemory) :pUserDataMemory(_pUserDataMemory)
+					MyCallBack(int64 _nCharID) :nCharID(_nCharID)
 					{
 					}
 				};
-
-				MyCallBack* myCallBack = new MyCallBack(pUserDataMemory);
+				MyCallBack* myCallBack = new MyCallBack(nCharID);
 				memset(SQL_BUFFER, 0, MAX_SQL_BUFFER);
-				SPRINTF(SQL_BUFFER, "SELECT * FROM `quest_info` WHERE `char_id`=%lld;", nCharID);
+				SPRINTF(SQL_BUFFER, "CALL ZP_GET_USER(%lld);", nCharID);
 				SQL_BUFFER[MAX_SQL_BUFFER - 1] = '\0';
 				pDB->ExecAsyncSQL(SQL_BUFFER, myCallBack);
-
-				return NULL;
 			}
+			return NULL;
 		}else
 		{
 			FLOG_WARRING(__FUNCDNAME__,__LINE__,"Create StUserDataMemory memory fail!");
 		}
 		return NULL;
 	}
+}
+
+StUserDataMemory* MemoryManager::GetUserMem(int64 nCharID, bool bQuery)
+{
+	UserMainMemoryMapType::iterator it = m_mapUserMainMemory.find(nCharID);
+	if (it != m_mapUserMainMemory.end())
+	{
+		if (bQuery || it->second && it->second->nInit == 1)
+		{
+			return it->second;
+		}
+	}
+	return NULL;
 }
 
 /*
@@ -337,3 +346,50 @@ void MemoryManager::Modifyed(int64 nCharID)
 
 
 
+
+// 查询任务 
+//{
+//	struct MyCallBack : public MyDBCallBack
+//	{
+//		int64 nCharID;
+//		virtual void QueryResult(IDbRecordSet* pSet, int32 nCount)
+//		{
+//			const DbRecordSet* pRecordSet = static_cast<const DbRecordSet*>(pSet);
+//			if (pRecordSet->Rows() == 0)
+//			{
+//				FLOG_WARRING(__FUNCTION__, __LINE__, "NOT Found In Data Quest");
+//				return;
+//			}
+
+//			const StQuestDataTable* pQuestDb = static_cast<const StQuestDataTable*>(pRecordSet->GetRecordData(0));
+//			if (pQuestDb == NULL)
+//			{
+//				FLOG_ERROR(__FUNCTION__, __LINE__, "Quest is null!");
+//				ASSERT(0);
+//				return;
+//			}
+
+//			StUserDataForDp* sUserData = MemoryManager::Instance()->GetUser(nCharID,true);
+//			if (sUserData == NULL)
+//			{
+//				FLOG_ERROR(__FUNCTION__, __LINE__, "Not Found User Mem");
+//				ASSERT(0);
+//				return;
+//			}
+
+//			// 保存数据到内存 
+//			sUserData->LoadQuestDataForDp(*pQuestDb);
+//		}
+
+//		MyCallBack(int64 _nCharID) :nCharID(_nCharID)
+//		{
+//		}
+//	};
+
+//	MyCallBack* myCallBack = new MyCallBack(nCharID);
+//	memset(SQL_BUFFER, 0, MAX_SQL_BUFFER);
+//	SPRINTF(SQL_BUFFER, "SELECT * FROM `quest_info` WHERE `char_id`=%lld;", nCharID);
+//	SQL_BUFFER[MAX_SQL_BUFFER - 1] = '\0';
+//	pDB->ExecAsyncSQL(SQL_BUFFER, myCallBack);
+
+//}

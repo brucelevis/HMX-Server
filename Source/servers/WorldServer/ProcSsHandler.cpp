@@ -88,7 +88,7 @@ void ProcSsHandler::RepChangeScene(BaseSession* pSession, const NetMsgHead* pMsg
 {
 	const S2WChangeScene* packet = static_cast<const S2WChangeScene*>(pMsg);
 
-	User* pUser = UserManager::Instance()->GetUserByCharID(packet->nCharID);
+	WorldUser* pUser = UserManager::Instance()->GetUserByCharID(packet->nCharID);
 	if (pUser == NULL)
 	{
 		FLOG_ERROR(__FUNCTION__, __LINE__, "Not Found User!");

@@ -61,7 +61,7 @@ void SceneUserManager::RemoveUser(int64 nUserID)
 
 	m_umapEntityUser.erase(it2);
 
-	int32 nCSID = pUser->GetClientSession()->SessionID();
+	int32 nCSID = pUser->GetClientSession()->GetSessionID();
 
 	UNORDERED_MAP<int32,SceneUser*>::iterator it3 = m_umapCSIDUser.find(nCSID);
 	if(it3 == m_umapCSIDUser.end())

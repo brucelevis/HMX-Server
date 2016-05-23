@@ -30,7 +30,7 @@ void ClientPlayer::Update(int32 nSrvTimes)
 }
 
 
-void	ClientPlayer::SendMsg( NetMsgHead* pMsg ,int32 nSize)
+void ClientPlayer::SendMsg(NetMsgHead* pMsg ,int32 nSize)
 {
 	// 加密处理 
 	static char msgBuffer[65536];

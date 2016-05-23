@@ -52,7 +52,7 @@ public:
 	 *  Created by hzd 2015/01/21  
 	 *
 	 */
-	virtual void SendMsg( NetMsgHead* pMsg,int32 nSize);
+	virtual void SendMsg( NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
 
 	/*
 	 *

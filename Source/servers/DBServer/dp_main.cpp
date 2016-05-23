@@ -19,7 +19,6 @@
 *
 */
 
-
 char SQL_BUFFER[ MAX_SQL_BUFFER ];
 
 bool gIsRun = true;
@@ -102,14 +101,14 @@ void InteravalIoUpdate(int32 nSrvTime)
 		ServerSessionMgr::Instance()->Update(nSrvTime);
 	}
 
-	if(__INTERAVAL_FIVE_SECOND__) // 5 秒 
-	{
-		ServerStatistic::Instance()->Update();
-	}
-
 	if(__INTERAVAL_ONE_MINUTE__) // 1 分 
 	{
 		MemoryManager::Instance()->Update();
+	}
+
+	if (__INTERAVAL_ONE_MINUTE__) // 1 分 
+	{
+		ServerStatistic::Instance()->Update();
 	}
 
 }

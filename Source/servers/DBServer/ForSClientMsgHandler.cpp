@@ -116,15 +116,20 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgH
 		return;
 	}
 
+	int64 nCharID = MemoryManager::Instance()->GetUserIDBySessionID(pPacket->nClientSessionID);
+
+	if (nCharID)
+	{
+		MemoryManager::Instance()->SaveNowByUID(nCharID);
+		MemoryManager::Instance()->RemoveByUID(nCharID);
+	}
+
 	/*-------------------------------------------------------------------
 	 * @Brief : 玩家退出的消息要么从WS过来，要么从SS中过来，二者其一 
 	 *			WS过来，则玩家是下线，SS过来可能是切场景或下线，可查看
 	 *			退出reason参数 
 	 * @Author:hzd 2015:11:20
 	 *------------------------------------------------------------------*/
-	// TODO 
-	//MemoryManager::Instance()->SaveNowByCSID(pPacket->nClientSessionID);
-
 	ClientSessionMgr::Instance()->RemoveSession(pPacket->nClientSessionID);
 
 }

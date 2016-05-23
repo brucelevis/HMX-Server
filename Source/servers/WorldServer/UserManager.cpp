@@ -3,20 +3,20 @@
 
 #include "SharedIncludes.h"
 #include "SceneInfoManger.h"
+#include "Utility.h"
 
 
-
-User::User(int32 _nCSID, ClientSession* pClientSession,const StUserDataForWs* fromDpData):m_nCSID(_nCSID),m_pClientSession(pClientSession),m_sData(fromDpData)
+WorldUser::WorldUser(ClientSession* pClientSession,const StUserDataForWs* fromDpData):m_pClientSession(pClientSession),m_sData(fromDpData)
 {
 	m_nCharID = m_sData.nCharID;
 }
 
-User::~User()
+WorldUser::~WorldUser()
 {
 
 }
 
-void User::EnterScene(int32 nSceneID,int32 nPram0, int32 nPram1, int32 nPram2)
+void WorldUser::EnterScene(int32 nSceneID,int32 nPram0, int32 nPram1, int32 nPram2)
 {
 
 	// 如何找到最合适的权重 最合适为负载最低 当前负载值 = 本server选择数量 + 本scene中使用数量 
@@ -46,7 +46,7 @@ void User::EnterScene(int32 nSceneID,int32 nPram0, int32 nPram1, int32 nPram2)
 
 	// 发送请求进入Scene 
 	W2SReqEnterScene sMsg;
-	sMsg.nClientSessionID = m_nCSID;
+	sMsg.nClientSessionID = m_pClientSession->GetSessionID();
 	sMsg.nCharacterID = m_nCharID;
 	sMsg.nSceneID = nSceneID;
 	sMsg.nDpServerID = m_pClientSession->GetDpServerID();
@@ -58,16 +58,23 @@ void User::EnterScene(int32 nSceneID,int32 nPram0, int32 nPram1, int32 nPram2)
 
 }
 
-int32 User::GetCurSceneID()
+int32 WorldUser::GetCurSceneID()
 {
 	return m_sData.nLandMapid;
 }
 
+void WorldUser::SendToFep(NetMsgHead* pMsg, int32 nSize, SocketCallbackBase* pCallback)
+{
+	if (m_pClientSession)
+	{
+		m_pClientSession->SendMsgToFep(pMsg,nSize,pCallback);
+	}
+}
 
 //////////////////////////////////////////////////////////////////////////
 
 
-ObjPool<User> UserManager::g_cUserFactory;
+ObjPool<WorldUser> UserManager::g_cUserFactory;
 
 UserManager::UserManager(void)
 {
@@ -77,11 +84,10 @@ UserManager::~UserManager(void)
 {
 }
 
-User* UserManager::LoginUser(int32 nCSID,ClientSession* pClientSession, const StUserDataForWs* fromDpData)
+WorldUser* UserManager::AddWorldUser(ClientSession* pClientSession, const StUserDataForWs* fromDpData)
 {
-
 	int64 nCharID = fromDpData->nCharID;
-	if(User* pNewUserData = g_cUserFactory.CreateObj(nCSID,pClientSession,fromDpData))
+	if(WorldUser* pNewUserData = g_cUserFactory.CreateObj(pClientSession,fromDpData))
 	{
 		UserMapType::iterator it = m_mapUser.find(nCharID);
 		if(it != m_mapUser.end())
@@ -89,27 +95,19 @@ User* UserManager::LoginUser(int32 nCSID,ClientSession* pClientSession, const St
 			FLOG_WARRING(__FUNCTION__,__LINE__,"UserData Had!Why?");
 			m_mapUser.erase(it);
 		}
+		AddSessionID(pClientSession->GetSessionID(),nCharID);
 		m_mapUser.insert(std::make_pair(nCharID,pNewUserData));
-
-		CSIDCharIDMapType::iterator it2 = m_mapCSIDCharID.find(nCSID);
-		if(it2 != m_mapCSIDCharID.end())
-		{
-			FLOG_WARRING(__FUNCTION__,__LINE__,"CSIDCharID Had!Why?");
-			m_mapCSIDCharID.erase(it2);
-		}
-		m_mapCSIDCharID.insert(std::make_pair(nCSID,nCharID));
-
+		FLOG_INFO("[INFO]:Add WorldUser ID:%lld\n", nCharID);
 		return pNewUserData;
 	}else
 	{
 		FLOG_ERROR(__FUNCTION__,__LINE__,"Create UserData Cache Fail!");
 		return NULL;
 	}
-
 }
 
 
-User* UserManager::GetUserByCharID(int64 nCharID)
+WorldUser* UserManager::GetUserByCharID(int64 nCharID)
 {
 	UserMapType::iterator it = m_mapUser.find(nCharID);
 	if(it != m_mapUser.end())
@@ -119,49 +117,56 @@ User* UserManager::GetUserByCharID(int64 nCharID)
 	return NULL;
 }
 
-User* UserManager::GetUserByCSID(int32 nCSID)
+
+void UserManager::RemoveWorldUser(int64 nCharID)
 {
-	if(int64 nCharID = GetCharIDByCSID(nCSID))
+	UserMapType::iterator itUser = m_mapUser.find(nCharID);
+	if(itUser == m_mapUser.end())
 	{
-		return GetUserByCharID(nCharID);
+		FLOG_INFO("[ERROR]:Not Found WorldUser ID:%lld\n", nCharID);
+		return ;
 	}
-	return NULL;
+	else
+	{
+		if (WorldUser* pWUser = itUser->second)
+		{
+			RemoveSessionID(pWUser->GetSessionID());
+		}
+		m_mapUser.erase(itUser);
+	}
+	FLOG_INFO("[INFO]:Remove WorldUser ID:%lld\n", nCharID);
+	
 }
 
-int64 UserManager::GetCharIDByCSID(int32 nCSID)
+void UserManager::AddSessionID(int32 nSessionID, int64 nCharID)
 {
-	CSIDCharIDMapType::iterator it = m_mapCSIDCharID.find(nCSID);
-	if(it != m_mapCSIDCharID.end())
+	SessionIDUserIDMapType::iterator it = m_mapSessionIDUserID.find(nSessionID);
+	if (it != m_mapSessionIDUserID.end())
+	{
+		it->second = nCharID;
+	}
+	else
+	{
+		m_mapSessionIDUserID.insert(std::make_pair(nSessionID,nCharID));
+	}
+}
+
+void UserManager::RemoveSessionID(int32 nSessionID)
+{
+	SessionIDUserIDMapType::iterator it = m_mapSessionIDUserID.find(nSessionID);
+	if (it != m_mapSessionIDUserID.end())
+	{
+		m_mapSessionIDUserID.erase(it);
+	}
+}
+
+int64 UserManager::GetUserIDBySessionID(int32 nSessionID)
+{
+	SessionIDUserIDMapType::iterator it = m_mapSessionIDUserID.find(nSessionID);
+	if (it != m_mapSessionIDUserID.end())
 	{
 		return it->second;
 	}
 	return 0;
-}
-
-void UserManager::LogoutUser(int32 nCSID)
-{
-	CSIDCharIDMapType::iterator itCSID = m_mapCSIDCharID.find(nCSID);
-	if(itCSID == m_mapCSIDCharID.end())
-	{
-		FLOG_WARRING(__FUNCTION__,__LINE__,"Not Found csid %d",nCSID);
-		return ;
-	}
-
-	int64 nCharID = itCSID->second;
-	if(nCharID < 1)
-	{
-		FLOG_WARRING(__FUNCTION__,__LINE__,"CharID < 1");
-		return;
-	}
-
-	m_mapCSIDCharID.erase(itCSID);
-
-	UserMapType::iterator itUser = m_mapUser.find(nCharID);
-	if(itUser == m_mapUser.end())
-	{
-		return ;
-	}
-	m_mapUser.erase(itUser);
-	
 }
 

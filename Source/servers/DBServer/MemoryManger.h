@@ -60,6 +60,8 @@ struct StCallBackInfo
  *-----------------------------------------------------------------*/
 struct StUserDataMemory
 {
+	int64			nCharID;				// 角色ID内存 
+	int32			nSessionID;				// sessionID;
 	int32   		nInit;					// 初始化情况，0 未初始化完成，1初始化完成 
 	int32			nQueryTime;				// 开始查询的时间 
 	int32 			nStatus;				// 数据状态，0正常，1修改，2删除 	
@@ -68,7 +70,7 @@ struct StUserDataMemory
 	StCallBackInfo*	pCallBack;				// 查询回调函数
 	StUserDataForDp sUserData;				// 用户主数据（所有数据）
 
-	StUserDataMemory(int64 _nCharID) // 构建可传数据库转为用户的数据对象 
+	StUserDataMemory(int64 _nCharID,int32 _nSessionID):nCharID(_nCharID),nSessionID(_nSessionID) // 构建可传数据库转为用户的数据对象 
 	{
 		nInit = nQueryTime =  nStatus = nLifeTime = nLastAsk = 0;
 	}
@@ -94,9 +96,11 @@ public:
 	MemoryManager(void);
 	~MemoryManager(void);
 
-	StUserDataForDp* GetUser(int64 nCharID);
+	StUserDataForDp* GetUser(int64 nCharID,bool bQuery = false);
 
-	StUserDataForDp* GetUserDb(int64 nCharID,StCallBackInfo* pCbHandler);
+	StUserDataForDp* GetUserDb(int64 nCharID,int32 nSessionID,StCallBackInfo* pCbHandler);
+
+	StUserDataMemory* GetUserMem(int64 nCharID,bool bQuery = false);
 
 	// 设置为有更新，会定时保存，如果没有设置这个，则会等生命周期才会保存到数据库 
 	void Modifyed(int64 nCharID);
@@ -107,18 +111,22 @@ public:
 
 	void RemoveByUID(int64 nUID);
 
+	int64 GetUserIDBySessionID(int32 nSessionID);
+
 public:
 
 	// 取到角色数据回调处理 ,nSrcType
 	static void DataCallbackToFrom(StUserDataMemory* pUserDataMemory);
 
-	void DeleteByUID(int64 nUID);  // 回收内存 
+	void RemoveSessionID(int32 nSessionID);
 
 private:
 	typedef	std::map<int64,StUserDataMemory*>	UserMainMemoryMapType;
+	typedef std::map<int32, int64>				SessionIDUserIDMapType;
 	
 	mutex   m_cSaveMutex;
 	UserMainMemoryMapType				m_mapUserMainMemory;	// User内存对象管理map
+	SessionIDUserIDMapType				m_mapSessionIDUserID;	// 
 	static ObjPool<StUserDataMemory>	g_cUserMainDbFactory;	// User内存构建工厂 
 
 };

@@ -101,19 +101,16 @@ EMsgRead NetSocket::ReadMsg(NetMsgHead** pMsg,int32& nSize)
 		return MSG_READ_INVALID;
 	}	
 
-	uint32 nLen = m_cIBuffer.GetLen();
-	if(!nLen)
-	{	
+	if(m_cIBuffer.GetLen() < PACKAGE_HEADER_SIZE) 
 		return MSG_READ_WAITTING;
-	}
 
-	void* cBuff = m_cIBuffer.GetStart();
-	memcpy(&nSize,cBuff, PACKAGE_HEADER_SIZE );
-	if(nLen < nSize + PACKAGE_HEADER_SIZE)
-	{
+	void* buf = m_cIBuffer.GetStart();
+	memcpy(&nSize,buf,PACKAGE_HEADER_SIZE);
+
+	if(m_cIBuffer.GetLen() < nSize + PACKAGE_HEADER_SIZE) 
 		return MSG_READ_REVCING;
-	}
-	*pMsg = (NetMsgHead*)((char*)cBuff + PACKAGE_HEADER_SIZE);
+
+	*pMsg = (NetMsgHead*)((char*)buf + PACKAGE_HEADER_SIZE);
 	return MSG_READ_OK;
 	
 }
@@ -192,12 +189,20 @@ void NetSocket::Clear()
 	m_cOBuffer.ClearBuffer();
 }
 
-void NetSocket::ParkMsg(NetMsgHead* pMsg,int32 nLength)
+void NetSocket::ParkMsg(NetMsgHead* pMsg,int32 nLength,SocketCallbackBase* call)
 {
 	ASSERT(nLength < 65336);
-	char arrLen[4];
-	memcpy(arrLen,&nLength,4);;
-	m_cOBuffer.Write(arrLen,4);
+
+	if (call && call->GetCallbackID())
+	{
+		m_mapCallback.insert(std::make_pair(call->GetCallbackID(), call));
+		pMsg->nCallbackID = call->GetCallbackID();
+		printf("[INFO]:ParkMsg had callback ID:%d\n",call->GetCallbackID());
+	}
+
+	char arrLen[PACKAGE_HEADER_SIZE];
+	memcpy(arrLen, &nLength, PACKAGE_HEADER_SIZE);
+	m_cOBuffer.Write(arrLen, PACKAGE_HEADER_SIZE);
 	m_cOBuffer.Write((char*)pMsg, nLength);
 }
 
@@ -254,7 +259,7 @@ const string NetSocket::GetIp()
 	return remote_endpoint().address().to_string();
 }
 
-void NetSocket::SetWillColse()
+void NetSocket::OnEventColse()
 {
 	printf("[WARRING]:SetWillColse\n");
 	m_bExit = true;
@@ -316,6 +321,27 @@ int32 NetSocket::ErrorCode(std::string& error)
 		break;
 	}
 	return m_errorCode;
+}
+
+void NetSocket::RunCallBack(int32 nCallbackID)
+{
+	std::map<int32, SocketCallbackBase*>::iterator it = m_mapCallback.find(nCallbackID);
+	if (it != m_mapCallback.end())
+	{
+		it->second->Finished(nCallbackID);
+		m_mapCallback.erase(it);
+	}
+}
+
+bool NetSocket::GetEvents(std::vector<int32>& o_vecEvents)
+{
+	if (!m_vecEvents.empty())
+	{
+		o_vecEvents.resize(m_vecEvents.size());
+		std::copy(m_vecEvents.begin(), m_vecEvents.end(),o_vecEvents.begin());
+		m_vecEvents.clear();
+	}
+	return !o_vecEvents.empty();
 }
 
 

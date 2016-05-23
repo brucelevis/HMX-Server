@@ -42,10 +42,12 @@ public:
 	//-----------------------------本地处理协议---------------------------------
 	// fep
 	void ReqFepEncyptHandler(BaseSession* pSession,const NetMsgHead* pMsg,int32 nSize);
-	void ReqFepCloseHandler(BaseSession* pSession,const NetMsgHead* pMsg,int32 nSize);
-	// 预备消息(用于处理fep新clientsession获得分配ls,ls新clientsession获得dp) 
 
 private:
+
+	// 收到socket断开消息的起始处理
+	// 其他Server若要断开某个玩家连接，就要发信息到Fep，然后调用ClientSession->Eixst();
+	void Disconnected(int32 nClientSessionID, int32 nErrorCode);
 	
 
 };

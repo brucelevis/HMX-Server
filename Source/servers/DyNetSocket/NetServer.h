@@ -237,58 +237,6 @@ private:
 };
 
 
-/*-------------------------------------------------------------------
- * @Brief : 服务器Socket管理器 
- * 
- * @Author:hzd 2016/04/03
- *------------------------------------------------------------------*/
-class NetServerMgr 
-{
-public:
-
-	/*
-	 *
-	 *	Detail: 获得单例实体
-	 *   
-	 *  Created by hzd 2013-4-21
-	 *
-	 */
-	static NetServerMgr* Instance();
-
-	/*
-	 *
-	 *	Detail: 创建一个NetServer，返回非NULL则成功
-	 *
-	 *  Created by hzd 2013/01/23
-	 *
-	 */
-	NetServer* AddNetServer();
-
-	/*
-	 *
-	 *	Detail: 通过serverID，可获得NetServer对象
-	 *
-	 *  Created by hzd 2013/01/23
-	 *
-	 */
-	NetServer* GetNetServer(int32 nServerID);
-
-	/*
-	 *
-	 *	Detail: 逻辑处理
-	 *   
-	 * Copyright (c) Created by hzd 2013-4-23.All rights reserved
-	 *
-	 */
-	void Update(float64 nDeley);
-
-private:
-
-	static NetServerMgr*	s_pInstance;	// 单例实体 
-	std::vector<NetServer*>	m_vecNetServer;	// 服务器窗器 
-
-};
-
 #endif
 
 

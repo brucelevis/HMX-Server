@@ -100,7 +100,7 @@ void ProcWorldHandler::ReqSelectRole(BaseSession* pBaseSession, const NetMsgHead
 	// 这里仅能通过new的方式，因为该内容要保存一段时间 
 	MyUserDataCallBack* pCallBack = new MyUserDataCallBack(nMyCSID);
 
-	StUserDataForDp* pUserMem = MemoryManager::Instance()->GetUserDb(pPacket->nCharID,pCallBack);
+	StUserDataForDp* pUserMem = MemoryManager::Instance()->GetUserDb(pPacket->nCharID,nMyCSID,pCallBack);
 	if(NULL == pUserMem )
 	{
 		// 找不到内存，查询数据库后会回调 

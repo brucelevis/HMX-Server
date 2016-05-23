@@ -111,7 +111,7 @@ void ForServerMsgHandler::OnNetMsg(NetSocket& rSocket, NetMsgHead* pMsg,int32 nS
 	if(pSession == NULL)
 	{
 		printf("Can not find session\n");
-		rSocket.SetWillColse();
+		rSocket.OnEventColse();
 		return ;
 	}
 
@@ -120,10 +120,10 @@ void ForServerMsgHandler::OnNetMsg(NetSocket& rSocket, NetMsgHead* pMsg,int32 nS
 	{
 		printf("Not found protocol:%d\n",pMsg->nType);
 		FLOG_ERROR(__FUNCTION__ , __LINE__ ,"Not found this protocol:%d",pMsg->nType);
-		rSocket.SetWillColse();
+		rSocket.OnEventColse();
 		return;
 	}
-
+	printf("[INFO]:Recived Protocol=%d\n", pMsg->nType);
 	(pMsgHandlerInfo->rHandler)((BaseSession*)(pSession),pMsg,nSize);
 
 }
@@ -296,7 +296,15 @@ void ForServerMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgHe
 		pClientSession->SendMsgToDp(&sMsgExit,sMsgExit.GetPackLength());
 	}
 	// 删除Session，UserData 
-	UserManager::Instance()->LogoutUser(nClientSessionID);
+	int64 nCharID = UserManager::Instance()->GetUserIDBySessionID(nClientSessionID);
+	if (nCharID)
+	{
+		UserManager::Instance()->RemoveWorldUser(nCharID);
+	}
+	else
+	{
+		FLOG_ERROR(__FUNCTION__,__LINE__,"Not Found UserID by sessionID:%d",nClientSessionID);
+	}
 	ClientSessionMgr::Instance()->RemoveSession(nClientSessionID);
 }
 

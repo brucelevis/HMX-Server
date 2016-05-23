@@ -177,7 +177,7 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgH
 	SceneUser* pCharacter = SceneUserManager::Instance()->GetUserByCSID(packet->nClientSessionID);
 	ASSERT(pCharacter);
 
-	//pCharacter->SaveData();
+	pCharacter->SaveData(NULL);
 
 	SSNofityClientExit sMsgExit;
 	sMsgExit.nReason = packet->nReason;

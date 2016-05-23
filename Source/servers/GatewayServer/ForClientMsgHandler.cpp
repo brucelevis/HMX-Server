@@ -21,7 +21,7 @@ ForClientMsgHandler::ForClientMsgHandler()
 	}
 
 	REGISTER_FEP_MESSAGE(PRO_C2F_ENCRYPT,	C2FepEncryptInfo,	ReqFepEncyptHandler);
-	REGISTER_FEP_MESSAGE(PRO_C2F_CLOSE,		C2FepClose,			ReqFepCloseHandler);
+	//REGISTER_FEP_MESSAGE(PRO_C2F_CLOSE,		C2FepClose,			ReqFepCloseHandler);
 
 #undef REGISTER_FEP_MESSAGE
 
@@ -71,12 +71,12 @@ void ForClientMsgHandler::OnNetMsgEnter(NetSocket& rSocket)
 {
 	if(ClientSession* pSession = ClientSessionMgr::Instance()->AddSession(rSocket.SID()))
 	{
-		printf("Client had connected! socketID=%d\n", rSocket.SID());
+		printf("[INFO]:Client had connected! socketID=%d\n", rSocket.SID());
 		ServerInfoOpt& rRemoteInfo = NetServerOpt::Instance()->GetRemoteServerInfo();
 		ServerSession* pWsServerSession = ServerSessionMgr::Instance()->GetSession(rRemoteInfo.nID);
 		if(pWsServerSession == NULL)
 		{
-			printf("WsSession is null, Please try it later!\n");
+			printf("[ERROR]:WsSession is null, Please try it later!\n");
 			pSession->Exist();	// ws 还未连接上或断开了 
 			return ;
 		}
@@ -86,7 +86,7 @@ void ForClientMsgHandler::OnNetMsgEnter(NetSocket& rSocket)
 		pSession->SetOnServerType(ESERVER_TYPE_FEP);
 	}else
 	{
-		printf("Create ClientSession Fail! Had this socketID = %d\n", rSocket.SID());
+		printf("[ERROR]:Create ClientSession Fail! Had this socketID = %d\n", rSocket.SID());
 	}
 }
 
@@ -107,19 +107,19 @@ void ForClientMsgHandler::OnNetMsg(NetSocket& rSocket, NetMsgHead* pMsg,int32 nS
 		const MsgHandlerInfo* pMsgHandlerInfo = GetMsgHandler(pMsg->nType);
 		if(pMsgHandlerInfo == NULL)
 		{
-			printf("Not Find Protocol:%d\n", pMsg->nType);
-			rSocket.SetWillColse();
+			printf("[ERROR]:Not Find Protocol:%d\n", pMsg->nType);
+			rSocket.OnEventColse();
 			return;
 		}
 		else
 		{
-			printf("OnNetMsg Protocol: %d\n", pMsg->nType);
+			printf("[INFO]:OnNetMsg Protocol: %d\n", pMsg->nType);
 			(pMsgHandlerInfo->rHandler)((BaseSession*)pSession, pMsg,nSize);
 		}
 	}else
 	{
-		printf("Cannot found clientsession:%d\n",rSocket.SID());
-		rSocket.SetWillColse();
+		printf("[ERROR]:Cannot found clientsession:%d\n",rSocket.SID());
+		rSocket.OnEventColse();
 	}
 	//---------------------------------服务组代码end-------------------------------
 }
@@ -130,27 +130,128 @@ void ForClientMsgHandler::OnNetMsgExit(NetSocket& rSocket)
 	// 服务器主动断开或被客户断开，都是从这里最先开始操作 
 	// socket这时不能再给Client发数据,socket可能已经失效 
 	int32 nClientSessionID = rSocket.SID();
-	
-	// 通知Ws,Ws再通知ls,dp，如果玩家在ss中，则会通知 
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(nClientSessionID);
-	ASSERT(pClientSession);
 
 	// 打印退出原因  
 	std::string strExitMsg;
 	int32 nErrorCode = rSocket.ErrorCode(strExitMsg);
-	printf("[Client]Eixst Reason msg:%s\n",strExitMsg.c_str());
+	printf("[INFO]:Eixst Reason msg:%s\n",strExitMsg.c_str());
+
+	Disconnected(nClientSessionID, nErrorCode);
+	//---------------------------------服务组代码end-------------------------------
+}
+
+// 发送到 ls 
+void ForClientMsgHandler::ReqSendToLoginServer(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
+{
+	//---------------------------------服务组代码begin-------------------------------
+	ClientSession* pClientSession = static_cast<ClientSession*>(pSession); 
+	
+	// 
+	if(pClientSession->Status() != E_CLIENT_STATUS_NOTIFY_INITED)
+	{
+		FLOG_WARRING(__FUNCTION__,__LINE__,"Status Not Eq E_CLIENT_STATUS_NOTIFY_INITED");
+		return;
+	}
+
+	MSG_CLIENT_COMMON_CLIENTSESSIONID(pClientSession->GetSessionID(),pMsg,nSize);
+	pClientSession->SendMsgToLs((NetMsgHead*)(&vecMsgBuffer[0]), vecMsgBuffer.size());
+	//---------------------------------服务组代码end-------------------------------
+}
+
+// 发送到 ss
+void ForClientMsgHandler::ReqSendToSceneServer(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
+{
+	//---------------------------------服务组代码begin-------------------------------
+
+	ClientSession* pClientSession = static_cast<ClientSession*>(pSession); 
+
+	if(pClientSession->Status() != E_CLIENT_STATUS_IN_SCENE)
+	{
+		FLOG_WARRING(__FUNCTION__,__LINE__,"Status Not Eq E_CLIENT_STATUS_IN_SCENE");
+		return;
+	}
+
+	MSG_CLIENT_COMMON_CLIENTSESSIONID(pClientSession->GetSessionID(),pMsg,nSize);
+	pClientSession->SendMsgToSs((NetMsgHead*)(&vecMsgBuffer[0]), vecMsgBuffer.size());
+
+	//---------------------------------服务组代码end-------------------------------
+}
+
+// 发送到 ws
+void ForClientMsgHandler::ReqSendToWorldServer(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
+{
+	//---------------------------------服务组代码begin-------------------------------
+	ClientSession* pClientSession = static_cast<ClientSession*>(pSession); 
+	
+	if(pClientSession->Status() <= E_CLIENT_STATUS_ENCRYPTED)
+	{
+		FLOG_WARRING(__FUNCTION__,__LINE__,"Status <= E_CLIENT_STATUS_NOTIFY_INITED");
+		return;
+	}
+	
+	MSG_CLIENT_COMMON_CLIENTSESSIONID(pClientSession->GetSessionID(),pMsg,nSize) ;
+	pClientSession->SendMsgToWs((NetMsgHead*)(&vecMsgBuffer[0]), vecMsgBuffer.size());
+	//---------------------------------服务组代码end-------------------------------
+}
+
+void ForClientMsgHandler::ReqFepEncyptHandler(BaseSession* pSession,const NetMsgHead* pMsg,int32 nSize)
+{
+	//---------------------------------服务组代码begin-------------------------------
+	printf("[INFO]:Client Request Encrypt!\n");
+	ClientSession* pClientSession = static_cast<ClientSession*>(pSession);
+	if(pClientSession->Status() == E_CLIENT_STATUS_CONNECTED )
+	{
+		char arrRandKey[MAX_ENCRYPT_LENTH];
+		Encrypt::RandKey(arrRandKey);
+		
+		F2CEncryptInfo sMsgEncrypt;
+		memcpy(sMsgEncrypt.arrEncryptKey, arrRandKey, MAX_ENCRYPT_LENTH);
+		pClientSession->SendMsg(&sMsgEncrypt,sMsgEncrypt.GetPackLength());
+
+		// 要先发数据后才能改 
+		pClientSession->SetEncryptKey(arrRandKey);
+		pClientSession->SetStatus(E_CLIENT_STATUS_ENCRYPTED);
+
+		// 请求分配服务器 ID 
+		SSReqLoadLest sMsgLoadLest;
+		sMsgLoadLest.nClientSessionID = pClientSession->GetSessionID();
+		pClientSession->SendMsgToWs(&sMsgLoadLest,sMsgLoadLest.GetPackLength());
+
+	}else
+	{
+		printf("[ERROR]:ClientSession Status Not Eq EPLAYER_STATUS_CONNECTED\n");
+	}
+	//---------------------------------服务组代码end-------------------------------
+}
+
+// 来自SS,LS,WS请求该该角色下线 
+//void ForClientMsgHandler::ReqFepCloseHandler(BaseSession* pSession,const NetMsgHead* pMsg,int32 nSize)
+//{
+//	// 不允许客户端请求服务端来主动断开这种方式，只能由客户端socket.close()方式 
+//
+//	//Disconnected(nClientSessionID, nErrorCode);
+//}
+
+
+
+void ForClientMsgHandler::Disconnected(int32 nClientSessionID, int32 nErrorCode)
+{
+	// 通知Ws,Ws再通知ls,dp，如果玩家在ss中，则会通知 
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(nClientSessionID);
+	ASSERT(pClientSession);
 
 	// 如果连接未进行验证，可以不发到WS中 
 	if (pClientSession->Status() < E_CLIENT_STATUS_ENCRYPTED)
 	{
 		// 删除ClientSession
+		pClientSession->Exist();
 		ClientSessionMgr::Instance()->RemoveSession(nClientSessionID);
 		return;
 	}
 
 	// 发出客户端退出消息 
 	SSNofityClientExit sMsgExit;
-	switch(nErrorCode)
+	switch (nErrorCode)
 	{
 	case ESOCKET_EXIST_NULL:
 		sMsgExit.nReason = SSNofityClientExit::E_REASON_UNKOWN;
@@ -170,6 +271,9 @@ void ForClientMsgHandler::OnNetMsgExit(NetSocket& rSocket)
 	case ESCOKET_EXIST_SEND_CONNECT_INVAILD:
 		sMsgExit.nReason = SSNofityClientExit::E_REASON_SEND_ERROR;
 		break;
+	case 99:
+		sMsgExit.nReason = SSNofityClientExit::E_REASON_REPEAT_CHARACTER;
+		break;
 	default:
 		sMsgExit.nReason = SSNofityClientExit::E_REASON_UNKOWN;
 		break;
@@ -177,101 +281,7 @@ void ForClientMsgHandler::OnNetMsgExit(NetSocket& rSocket)
 	pClientSession->SendMsgToWs(&sMsgExit, sMsgExit.GetPackLength());
 
 	// 删除ClientSession
+	pClientSession->Exist();
 	ClientSessionMgr::Instance()->RemoveSession(nClientSessionID);
-
-	//---------------------------------服务组代码end-------------------------------
-}
-
-// 发送到 ls 
-void ForClientMsgHandler::ReqSendToLoginServer(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
-{
-	//---------------------------------服务组代码begin-------------------------------
-	ClientSession* pClientSession = static_cast<ClientSession*>(pSession); 
-	
-	// 
-	if(pClientSession->Status() != E_CLIENT_STATUS_NOTIFY_INITED)
-	{
-		FLOG_WARRING(__FUNCTION__,__LINE__,"Status Not Eq E_CLIENT_STATUS_NOTIFY_INITED");
-		return;
-	}
-
-	MSG_CLIENT_COMMON_CLIENTSESSIONID(pClientSession->SessionID(),pMsg,nSize);
-	pClientSession->SendMsgToLs((NetMsgHead*)(&vecMsgBuffer[0]), vecMsgBuffer.size());
-	//---------------------------------服务组代码end-------------------------------
-}
-
-// 发送到 ss
-void ForClientMsgHandler::ReqSendToSceneServer(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
-{
-	//---------------------------------服务组代码begin-------------------------------
-
-	ClientSession* pClientSession = static_cast<ClientSession*>(pSession); 
-
-	if(pClientSession->Status() != E_CLIENT_STATUS_IN_SCENE)
-	{
-		FLOG_WARRING(__FUNCTION__,__LINE__,"Status Not Eq E_CLIENT_STATUS_IN_SCENE");
-		return;
-	}
-
-	MSG_CLIENT_COMMON_CLIENTSESSIONID(pClientSession->SessionID(),pMsg,nSize);
-	pClientSession->SendMsgToSs((NetMsgHead*)(&vecMsgBuffer[0]), vecMsgBuffer.size());
-
-	//---------------------------------服务组代码end-------------------------------
-}
-
-// 发送到 ws
-void ForClientMsgHandler::ReqSendToWorldServer(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
-{
-	//---------------------------------服务组代码begin-------------------------------
-	ClientSession* pClientSession = static_cast<ClientSession*>(pSession); 
-	
-	if(pClientSession->Status() <= E_CLIENT_STATUS_ENCRYPTED)
-	{
-		FLOG_WARRING(__FUNCTION__,__LINE__,"Status <= E_CLIENT_STATUS_NOTIFY_INITED");
-		return;
-	}
-	
-	MSG_CLIENT_COMMON_CLIENTSESSIONID(pClientSession->SessionID(),pMsg,nSize) ;
-	pClientSession->SendMsgToWs((NetMsgHead*)(&vecMsgBuffer[0]), vecMsgBuffer.size());
-	//---------------------------------服务组代码end-------------------------------
-}
-
-void ForClientMsgHandler::ReqFepEncyptHandler(BaseSession* pSession,const NetMsgHead* pMsg,int32 nSize)
-{
-	//---------------------------------服务组代码begin-------------------------------
-	printf("Client Request Encrypt!\n");
-	ClientSession* pClientSession = static_cast<ClientSession*>(pSession);
-	if(pClientSession->Status() == E_CLIENT_STATUS_CONNECTED )
-	{
-		char arrRandKey[MAX_ENCRYPT_LENTH];
-		Encrypt::RandKey(arrRandKey);
-		
-		F2CEncryptInfo sMsgEncrypt;
-		memcpy(sMsgEncrypt.arrEncryptKey, arrRandKey, MAX_ENCRYPT_LENTH);
-		pClientSession->SendMsg(&sMsgEncrypt,sMsgEncrypt.GetPackLength());
-
-		// 要先发数据后才能改 
-		pClientSession->SetEncryptKey(arrRandKey);
-		pClientSession->SetStatus(E_CLIENT_STATUS_ENCRYPTED);
-
-		// 请求分配服务器 ID 
-		SSReqLoadLest sMsgLoadLest;
-		sMsgLoadLest.nClientSessionID = pClientSession->SessionID();
-		pClientSession->SendMsgToWs(&sMsgLoadLest,sMsgLoadLest.GetPackLength());
-
-	}else
-	{
-		printf("ClientSession Status Not Eq EPLAYER_STATUS_CONNECTED\n");
-	}
-	//---------------------------------服务组代码end-------------------------------
-}
-
-void ForClientMsgHandler::ReqFepCloseHandler(BaseSession* pSession,const NetMsgHead* pMsg,int32 nSize)
-{
-	// 不允许客户端请求服务端来主动断开这种方式，只能由客户端socket.close()方式 
-	//---------------------------------服务组代码begin-------------------------------
-	//ClientSession* pClientSession = static_cast<ClientSession*>(pSession);
-	//pClientSession->Exist();
-	//---------------------------------服务组代码begin-------------------------------
 }
 

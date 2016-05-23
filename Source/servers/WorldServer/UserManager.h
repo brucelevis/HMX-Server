@@ -18,28 +18,33 @@ class ClientSession;
  * @Date  : 2015/11/08 19:57
  * @Copyright (c) 2015,hzd, All rights reserved.
  *-----------------------------------------------------------------*/
-class User
+class WorldUser
 {
 public:
 
-	User(int32 _nCSID, ClientSession* pClientSession,const StUserDataForWs* fromDpData);
+	WorldUser(ClientSession* pClientSession,const StUserDataForWs* fromDpData);
 
-	~User();
+	~WorldUser();
+
+	int64 GetUserID() { return m_nCharID;}
+
+	int32 GetSessionID() 
+	{
+		return m_pClientSession ? m_pClientSession->GetSessionID() : 0;
+	}
 
 	void EnterScene(int32 nSceneID,int32 nPram0 = 0,int32 nPram1 = 0,int32 nPram2 = 0);
 
 	int32 GetCurSceneID();
 
+	void SendToFep(NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
 
 private:
 
-	int32				m_nCSID;
 	int64				m_nCharID;
-
 	ClientSession*		m_pClientSession;
-
 	StUserDataForWs		m_sData;
-	
+
 };
 
 
@@ -62,26 +67,28 @@ public:
 	~UserManager(void);
 
 
-	User* LoginUser(int32 nCSID, ClientSession* pClientSession,const StUserDataForWs* fromDpData);
+	WorldUser* AddWorldUser(ClientSession* pClientSession,const StUserDataForWs* fromDpData);
 
-	void LogoutUser(int32 nCSID);
+	void RemoveWorldUser(int64 nCharID);
 
-	int64 GetCharIDByCSID(int32 nCSID);
+	WorldUser* GetUserByCharID(int64 nCharID);
 
-	User* GetUserByCharID(int64 nCharID);
-
-	User* GetUserByCSID(int32 nCSID);
-	
+	int64 GetUserIDBySessionID(int32 nSessionID);
 
 private:
 
-	typedef std::map<int64,User*>	UserMapType;
-	typedef std::map<int32,int64>	CSIDCharIDMapType;
+	void AddSessionID(int32 nSessionID,int64 nCharID);
 
-	UserMapType				m_mapUser;			// 在线用户缓存 
-	CSIDCharIDMapType		m_mapCSIDCharID;	// ClientS
-	static ObjPool<User>	g_cUserFactory;
+	void RemoveSessionID(int32 nSessionID);
+	
+private:
 
+	typedef std::map<int64,WorldUser*>	UserMapType;
+	typedef std::map<int32, int64>		SessionIDUserIDMapType;
+
+	UserMapType					m_mapUser;			// 在线用户缓存 
+	static ObjPool<WorldUser>	g_cUserFactory;
+	SessionIDUserIDMapType		m_mapSessionIDUserID;
 };
 
 

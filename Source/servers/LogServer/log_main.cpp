@@ -86,14 +86,8 @@ void InteravalCommonUpdate(int32 nSrvTime)
 		gDbServerMgr->Update();
 	}
 
-
 	ClientSessionMgr::Instance()->Update(nSrvTime);
 	ServerSessionMgr::Instance()->Update(nSrvTime);
-
-	if(__INTERAVAL_FIVE_SECOND__)
-	{
-		ServerStatistic::Instance()->Update();
-	}
 
 	if(__INTERAVAL_FIVE_SECOND__)
 	{
@@ -101,6 +95,12 @@ void InteravalCommonUpdate(int32 nSrvTime)
 		int32 nClientNum = ClientSessionMgr::Instance()->ConnectedSessions();
 		printf("Server Info:Server Connected Num:%d , Client Connected Num:%d\n", nServerNum,nClientNum);	// 标识主线程还在做事中
 	}
+
+	if (__INTERAVAL_ONE_MINUTE__)
+	{
+		ServerStatistic::Instance()->Update();
+	}
+
 }
 
 bool Init()

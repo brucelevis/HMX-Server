@@ -47,18 +47,18 @@ public:
 		const MsgHandlerInfo* pMsgHandler = baseMsgHandler.GetMsgHandler(pMsg->nType);
 		if (NULL == pMsgHandler)
 		{
-			printf("Not Find Protocol:%d\n", pMsg->nType);
-			rSocket.SetWillColse();
+			printf("[ERROR]:Not Find Protocol:%d\n", pMsg->nType);
+			rSocket.OnEventColse();
 			return false;
 		}
 
 		ServerSession* pWsSession = (ServerSessionMgr::Instance()->GetSession(rSocket));
 		if (NULL == pWsSession)
 		{
-			printf("Not Find ServerSession Of WS:\n");
+			printf("[ERROR]:Not Find ServerSession Of WS:\n");
 			return false;
 		}
-
+		printf("[INFO]:Recived Protocol=%d\n", pMsg->nType);
 		(pMsgHandler->rHandler)((BaseSession*)pWsSession, pMsg, nSize);
 
 		return true;
@@ -72,11 +72,11 @@ public:
 		if (ServerSession* pSession = ServerSessionMgr::Instance()->GetSession(rSocket))
 		{
 			ServerSessionMgr::Instance()->RemoveSession(pSession->ServerID());
-			printf("OnNetMsgExit:%d\n", pSession->ServerID());
+			printf("[NOTE]:OnNetMsgExit:%d\n", pSession->ServerID());
 		}
 		else
 		{
-			printf("Can not find session by socket!\n");
+			printf("[ERROR]:Can not find session by socket!\n");
 			ASSERT(0);
 		}
 		return true;
@@ -223,7 +223,7 @@ public:
 			if(pMsgHandlerInfo == NULL)
 			{
 				printf("Can not find protocol:%d\n",pMsg->nType);
-				rSocket.SetWillColse();
+				rSocket.OnEventColse();
 				return false;
 			}
 			else
