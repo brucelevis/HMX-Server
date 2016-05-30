@@ -1,21 +1,21 @@
 #include "NetServer.h"
 #include "NetSocket.h"
 
-NetServer::NetServer(int32 nMaxConnected,int32 nMaxRecivedSize,int32 nMaxSendoutSize,int32 nMaxRecivedCacheSize,int32 nMaxSendoutCacheSize):m_cAcceptor(*this),m_nMaxConnected(nMaxConnected)
+NetServer::NetServer(int32 nMaxConnected, int32 nMaxRecivedSize, int32 nMaxSendoutSize, int32 nMaxRecivedCacheSize, int32 nMaxSendoutCacheSize) :m_cAcceptor(*this), m_nMaxConnected(nMaxConnected)
 {
 	int32 _nPreCacehTotal = 1024 * 1024 * 1024; // 1G
 	int32 _nMaxConnectNum = _nPreCacehTotal / (nMaxRecivedCacheSize + nMaxSendoutCacheSize);
 	int32 _nMaxRecivedCacheSize = (_nPreCacehTotal - nMaxConnected * nMaxSendoutCacheSize) / nMaxConnected;
 	int32 _nMaxSendoutCacheSize = (_nPreCacehTotal - nMaxConnected * nMaxRecivedCacheSize) / nMaxConnected;
-	if(!( 0 < nMaxConnected && nMaxConnected < _nPreCacehTotal))
+	if (!(0 < nMaxConnected && nMaxConnected < _nPreCacehTotal))
 	{
 		printf("[ERROR]:nMaxConnectd need < 65536 & > 0\n");
 		ASSERT(0);
 		return;
 	}
 
-	if(nMaxRecivedSize  < 1 || nMaxRecivedSize > 65536  ||  nMaxSendoutSize < 1  || nMaxSendoutSize > 65536 || 
-				nMaxRecivedCacheSize < 1  || nMaxRecivedCacheSize > _nMaxRecivedCacheSize || nMaxSendoutCacheSize < 1  || nMaxSendoutCacheSize > _nMaxSendoutCacheSize)
+	if (nMaxRecivedSize < 1 || nMaxRecivedSize > 65536 || nMaxSendoutSize < 1 || nMaxSendoutSize > 65536 ||
+		nMaxRecivedCacheSize < 1 || nMaxRecivedCacheSize > _nMaxRecivedCacheSize || nMaxSendoutCacheSize < 1 || nMaxSendoutCacheSize > _nMaxSendoutCacheSize)
 	{
 		printf("[ERROR]:nMaxRecivedSize | nMaxSendoutSize | nMaxRecivedCacheSize | nMaxSendoutCacheSize Need < ? & > 0\n");
 		ASSERT(0);
@@ -24,19 +24,20 @@ NetServer::NetServer(int32 nMaxConnected,int32 nMaxRecivedSize,int32 nMaxSendout
 	static int32 s_nIncreaseNetServerID = 0;
 	m_nServerID = ++s_nIncreaseNetServerID;
 
-	for(int32 i = 0; i < nMaxConnected; i++)
+	for (int32 i = 0; i < nMaxConnected; i++)
 	{
-		m_arrSocket[i] = new NetSocket(*this,nMaxRecivedSize, nMaxSendoutSize, nMaxRecivedCacheSize, nMaxSendoutCacheSize);
+		m_arrSocket[i] = new NetSocket(*this, nMaxRecivedSize, nMaxSendoutSize, nMaxRecivedCacheSize, nMaxSendoutCacheSize);
 	}
+	SetHandlerDefault();
 }
 
 
 NetServer::~NetServer()
 {
-	for(int32 i = 0; i < m_nMaxConnected; i++)
+	for (int32 i = 0; i < m_nMaxConnected; i++)
 	{
 		NetSocket* pSocket = m_arrSocket[i];
-		if(pSocket)
+		if (pSocket)
 		{
 			delete pSocket;
 			pSocket = NULL;
@@ -51,7 +52,7 @@ int32 NetServer::SID()
 
 void NetServer::SetTimeout(int32 nTimeout)
 {
-	for(int32 i = 0; i < m_nMaxConnected; i++)
+	for (int32 i = 0; i < m_nMaxConnected; i++)
 	{
 		m_arrSocket[i]->SetTimeout(nTimeout);
 	}
@@ -59,7 +60,7 @@ void NetServer::SetTimeout(int32 nTimeout)
 
 void NetServer::SetAccept(NetSocket& rSocket)
 {
-	m_cAcceptor.async_accept(rSocket,boost::bind(&NetServer::HandleAccept, this, boost::asio::placeholders::error,&rSocket));
+	m_cAcceptor.async_accept(rSocket, boost::bind(&NetServer::HandleAccept, this, boost::asio::placeholders::error, &rSocket));
 }
 
 
@@ -74,8 +75,20 @@ void NetServer::SetHandlerDefault()
 {
 	// 设置默认的回调接口 
 	m_pOnEnter = boost::bind(&NetServer::MsgConnected, this, _1);
-	m_pOnMsg = boost::bind(&NetServer::MsgRecived, this, _1, _2,_3);
+	m_pOnMsg = boost::bind(&NetServer::MsgRecived, this, _1, _2, _3);
 	m_pOnExit = boost::bind(&NetServer::MsgDisconnect, this, _1);
+
+	localPreMsg = boost::bind(&NetServer::EventLocalPreMsg, this, _1, _2);
+	localAfterMsg = boost::bind(&NetServer::EventLocalAfterMsg, this, _1, _2);
+	localPreOnlyMsg = boost::bind(&NetServer::EventLocalPreOnlyMsg, this, _1, _2);
+	localAfterOnlyMsg = boost::bind(&NetServer::EventLocalAfterOnlyMsg, this, _1, _2);
+
+	remoteClose = boost::bind(&NetServer::EventRemoteColse, this, _1, _2);
+	remotePreMsg = boost::bind(&NetServer::EventRemotePreMsg, this, _1, _2);
+	remoteAfterMsg = boost::bind(&NetServer::EventRemoteAfterMsg, this, _1, _2);
+	remotePreOnlyMsg = boost::bind(&NetServer::EventRemotePreOnlyMsg, this, _1, _2);
+	remoteAfterOnlyMsg = boost::bind(&NetServer::EventRemoteAfterOnlyMsg, this, _1, _2);
+
 }
 
 void NetServer::SetHandler(PNetServerEnterHandler pEnter, PNetServerOnMsgHandler pOnMsg, PNetServerExistHandler pExit)
@@ -87,7 +100,7 @@ void NetServer::SetHandler(PNetServerEnterHandler pEnter, PNetServerOnMsgHandler
 
 void NetServer::Run()
 {
-	while(true)
+	while (true)
 	{
 		boost::system::error_code ec;
 #ifdef _DEBUG
@@ -98,9 +111,10 @@ void NetServer::Run()
 		{
 			run(ec);
 			break;
-		} catch(std::exception& e)
+		}
+		catch (std::exception& e)
 		{
-			printf("[ERROR]:NetServer Error Msg:%s\n",e.what());
+			printf("[ERROR]:NetServer Error Msg:%s\n", e.what());
 		}
 #endif
 	}
@@ -127,12 +141,12 @@ void NetServer::HandleStart()
 	assert(!ec);
 	m_cAcceptor.listen(socket_base::max_connections, ec);
 	assert(!ec);
-	for(int i = 0; i < m_nMaxConnected; ++i)
+	for (int i = 0; i < m_nMaxConnected; ++i)
 	{
 		SetAccept(*m_arrSocket[i]);
 	}
 	thread_group tg;
-	for(int i = 0; i < MAX_THREAD; ++i)
+	for (int i = 0; i < MAX_THREAD; ++i)
 	{
 		tg.create_thread(boost::bind(&NetServer::Run, this));
 	}
@@ -149,7 +163,7 @@ void NetServer::OnUpdateAccept()
 {
 	mutex::scoped_lock cLock(m_cClientListMutex);
 	size_t nSize = m_vecAcceptSocket.size();
-	for(size_t i = 0; i < nSize; ++i)
+	for (size_t i = 0; i < nSize; ++i)
 	{
 		(m_pOnEnter)(*m_vecAcceptSocket[i]);
 		m_vecUsedSocket.push_back(m_vecAcceptSocket[i]);
@@ -160,72 +174,206 @@ void NetServer::OnUpdateAccept()
 
 void NetServer::OnUpdateRecived()
 {
-
 	static size_t nSocketSize = 0;
 	static int32 nMsgBodyLen = 0;
 	static NetMsgHead* pMsg = NULL;
+	static bool bNeedReadNextMsg = false;
+	static bool bNeedCloseSocket = false;
 
 	nSocketSize = m_vecUsedSocket.size();
 
-	for(size_t nIndex = 0; nIndex < nSocketSize; ++nIndex)
+	for (size_t nIndex = 0; nIndex < nSocketSize; ++nIndex)
 	{
 		NetSocket* pSocket = m_vecUsedSocket[nIndex];
-		if(!pSocket)
+		if (!pSocket)
 			continue;
-		
-		// 处理事件
-		std::vector<int32> vecEvents;
-		if (pSocket->GetEvents(vecEvents))
+
+		bNeedReadNextMsg = false;
+		bNeedCloseSocket = false;
+
+		int nMsgResult = pSocket->ReadMsg(&pMsg, nMsgBodyLen);
+
+		// Pre处理事件
+		std::vector<SocketEvent> vecEvents;
+		pSocket->GetEvents(vecEvents);
+		if (!vecEvents.empty())
 		{
-			for (std::vector<int32>::iterator it = vecEvents.begin(); it != vecEvents.end();++it)
+			for (std::vector<SocketEvent >::const_iterator it = vecEvents.begin(); it != vecEvents.end(); ++it)
 			{
-				int32 nEvent = *it;
-				switch (nEvent)
+				const SocketEvent& stEvent = *it;
+				switch (stEvent.first)
 				{
-				default: // todo 
-					break;
+				case EVENT_LOCAL_REVC_CLOSE: // 退出 
+				{
+					bNeedCloseSocket = true;
+					pSocket->RemoveEvents(stEvent);
+				}
+				break;
+				case EVENT_LOCAL_REVC_PRE_MSG:
+				{
+					// 调用注册好的协议
+					if (localPreMsg)
+					{
+						(localPreMsg)(*pSocket, stEvent);
+					}
+					pSocket->RemoveEvents(stEvent);
+				}
+				break;
+				case EVENT_LOCAL_REVC_PRE_ONLY_MSG:
+				{
+					// 调用注册好的协议
+					if (localPreOnlyMsg && stEvent.second == pMsg->nType && stEvent.third == pMsg->nSessionID)
+					{
+						(localPreOnlyMsg)(*pSocket, stEvent);
+						pSocket->RemoveEvents(stEvent);
+					}
+				}
+				break;
+				case EVENT_REMOTE_REVC_CLOSE:
+				case EVENT_REMOTE_REVC_PRE_MSG:
+				{
+					stRemoteMsg sMsg;
+					sMsg.stEvent = stEvent;
+					pSocket->ParkMsg(&sMsg, sizeof(stRemoteMsg));
+					pSocket->SendMsg();
+					pSocket->RemoveEvents(stEvent);
+				}
+				case EVENT_REMOTE_REVC_PRE_ONLY_MSG:
+				{
+					if (stEvent.second == pMsg->nType && stEvent.third == pMsg->nSessionID)
+					{
+						stRemoteMsg sMsg;
+						sMsg.stEvent = stEvent;
+						pSocket->ParkMsg(&sMsg, sizeof(stRemoteMsg));
+						pSocket->SendMsg();
+						pSocket->RemoveEvents(stEvent);
+					}
+				}
+				break;
 				}
 			}
 		}
-		
-		switch(pSocket->ReadMsg(&pMsg,nMsgBodyLen))
+
+		// 
+		if (bNeedCloseSocket)
 		{
-			case MSG_READ_INVALID: // 断开socket，再设置为重新等待 
+			(m_pOnExit)(*pSocket);
+			m_vecUsedSocket.erase(m_vecUsedSocket.begin() + nIndex);
+			nIndex--; nSocketSize--;
+			pSocket->Disconnect();
+			Sleep(10); // for disconnect
+			SetAccept(*pSocket);
+			bNeedReadNextMsg = true;
+		}
+
+		// 跳下一个Socket
+		if (bNeedReadNextMsg)
+			continue;
+
+		switch (nMsgResult)
+		{
+		case MSG_READ_INVALID: // 断开socket，再设置为重新等待 
+		{
+			pSocket->AddEventLocalClose();
+		}
+		break;
+		case MSG_READ_OK: // 收到正常的数据请求 
+		{
+			if (pMsg->nType == PRO_REMOTE) // 来自于远程协议 
 			{
-				printf("[WARRING]:MSG_READ_INVALID \n");
-				(m_pOnExit)(*pSocket);
-				m_vecUsedSocket.erase(m_vecUsedSocket.begin() + nIndex);
-				pSocket->Disconnect();
-				SetAccept(*pSocket);
-				nIndex--;nSocketSize--;
-			}
-				break;
-			case MSG_READ_OK: // 收到正常的数据请求 
-			{
-				if (pMsg->nType == PRO_CALLBACK)
+				// 处理远程的调用，结束，无需设置状态回去 
+				const stRemoteMsg* remoteMsg = static_cast<const stRemoteMsg*>(pMsg);
+				switch (remoteMsg->stEvent.first)
 				{
-					const stCallbackMsg* rev = static_cast<const stCallbackMsg*>(pMsg);
-					pSocket->RunCallBack(rev->nRepCallbackID);
-					printf("[INFO]:Callback Local ID :%d\n", rev->nRepCallbackID);
+				case EVENT_REMOTE_REVC_CLOSE:
+					if (remoteClose) (remoteClose)(*pSocket, remoteMsg->stEvent);
+					break;
+				case EVENT_REMOTE_REVC_PRE_MSG:
+					if (remotePreMsg) (remotePreMsg)(*pSocket, remoteMsg->stEvent);
+					break;
+				case EVENT_REMOTE_REVC_AFTER_MSG:
+					if (remoteAfterMsg) (remoteAfterMsg)(*pSocket, remoteMsg->stEvent);
+					break;
+				case EVENT_REMOTE_REVC_PRE_ONLY_MSG:
+				case EVENT_REMOTE_SEND_PRE_ONLY_MSG:
+					if (remotePreOnlyMsg) (remotePreOnlyMsg)(*pSocket, remoteMsg->stEvent);
+					break;
+				case EVENT_REMOTE_REVC_AFTER_ONLY_MSG:
+				case EVENT_REMOTE_SEND_AFTER_ONLY_MSE:
+					if (remoteAfterOnlyMsg) (remoteAfterOnlyMsg)(*pSocket, remoteMsg->stEvent);
+					break;
+				default:
+					printf("[ERROR]:REMOTE EVENT NOT FOUNT : %d\n", remoteMsg->stEvent.first);
+					break;
 				}
-				else
+			}
+			else
+			{
+				(m_pOnMsg)(*pSocket, pMsg, nMsgBodyLen);
+				if (pMsg->stEvent.first) // 远程增加事件 
 				{
-					(m_pOnMsg)(*pSocket,pMsg,nMsgBodyLen);
-					if (pMsg->nCallbackID) // 需要回调 
+					pSocket->AddEvent(pMsg->stEvent);
+				}
+			}
+			pSocket->RemoveMsg(PACKAGE_HEADER_SIZE + nMsgBodyLen);
+		}
+		break;
+		case MSG_READ_WAITTING:
+		case MSG_READ_REVCING:
+			break;
+		}
+
+		// Afer检查定义事件 
+		if (!vecEvents.empty())
+		{
+			for (std::vector<SocketEvent >::const_iterator it = vecEvents.begin(); it != vecEvents.end(); ++it)
+			{
+				const SocketEvent& stEvent = *it;
+				switch (stEvent.first)
+				{
+				case EVENT_LOCAL_REVC_AFTER_MSG:
+				{
+					// 调用注册好的协议
+					if (localAfterMsg)
 					{
-						stCallbackMsg callMsg;
-						callMsg.nRepCallbackID = pMsg->nCallbackID;
-						pSocket->ParkMsg(&callMsg,callMsg.GetPackLength());
-						pSocket->SendMsg();
-						printf("[INFO]:Callback Remote ID :%d ,From Pro %d\n", pMsg->nCallbackID, pMsg->nType);
+						(localAfterMsg)(*pSocket, stEvent);
+						pSocket->RemoveEvents(stEvent);
 					}
 				}
-				pSocket->RemoveMsg(PACKAGE_HEADER_SIZE + nMsgBodyLen);
+				break;
+				case EVENT_LOCAL_REVC_AFTER_ONLY_MSG:
+				{
+					// 调用注册好的协议
+					if (localAfterOnlyMsg && stEvent.second == pMsg->nType && stEvent.third == pMsg->nSessionID)
+					{
+						(localPreOnlyMsg)(*pSocket, stEvent);
+						pSocket->RemoveEvents(stEvent);
+					}
+				}
+				break;
+				case EVENT_REMOTE_REVC_AFTER_MSG:
+				{
+					stRemoteMsg sMsg;
+					sMsg.stEvent = stEvent;
+					pSocket->ParkMsg(&sMsg, sizeof(stRemoteMsg));
+					pSocket->SendMsg();
+					pSocket->RemoveEvents(stEvent);
+				}
+				break;
+				case EVENT_REMOTE_REVC_AFTER_ONLY_MSG:
+				{
+					if (stEvent.second == pMsg->nType && stEvent.third == pMsg->nSessionID)
+					{
+						stRemoteMsg sMsg;
+						sMsg.stEvent = stEvent;
+						pSocket->ParkMsg(&sMsg, sizeof(stRemoteMsg));
+						pSocket->SendMsg();
+						pSocket->RemoveEvents(stEvent);
+					}
+				}
+				break;
+				}
 			}
-				break;
-			case MSG_READ_WAITTING:
-			case MSG_READ_REVCING:
-				break;
 		}
 	}
 }
@@ -233,12 +381,12 @@ void NetServer::OnUpdateRecived()
 
 void NetServer::Update()
 {
-	if(m_vecAcceptSocket.size())
+	if (m_vecAcceptSocket.size())
 	{
 		OnUpdateAccept();
 	}
 
-	if(m_vecUsedSocket.size())
+	if (m_vecUsedSocket.size())
 	{
 		OnUpdateRecived();
 	}
@@ -246,7 +394,7 @@ void NetServer::Update()
 
 void NetServer::HandleAccept(const boost::system::error_code& rError, NetSocket* pSocket)
 {
-	if(rError)
+	if (rError)
 	{
 		SetAccept(*pSocket);
 		return;
@@ -264,29 +412,29 @@ NetSocket& NetServer::GetSocket(int32 nIndex)
 	return *m_arrSocket[nIndex];
 }
 
-int32 NetServer::ConnectedSockets()
+size_t NetServer::ConnectedSockets()
 {
 	return m_vecUsedSocket.size();
 }
 
-int32 NetServer::AcceptingSockets()
+size_t NetServer::AcceptingSockets()
 {
 	return m_vecAcceptSocket.size();
 }
 
 void NetServer::MsgConnected(NetSocket& pSocket)
 {
-	
+
 }
 
-void NetServer::MsgRecived(NetSocket& pSocket, NetMsgHead* pMsg,int32 nSize)
+void NetServer::MsgRecived(NetSocket& pSocket, NetMsgHead* pMsg, int32 nSize)
 {
-	
+
 }
 
 void NetServer::MsgDisconnect(NetSocket& pSocket)
 {
-	
+
 }
 
 

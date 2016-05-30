@@ -25,7 +25,7 @@ void ProcDpHandler::RepSelectRoleResult(BaseSession* pSession, const NetMsgHead*
 	const D2WSelectRoleResult* pRev = static_cast<const D2WSelectRoleResult*>(pMsg);
 	
 	// 发送到Client，加载场景中
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pRev->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pRev->nSessionID);
 	if (pClientSession == NULL)
 	{
 		FLOG_ERROR(__FUNCTION__, __LINE__, "Not Found pClientSession!");
@@ -42,62 +42,28 @@ void ProcDpHandler::RepSelectRoleResult(BaseSession* pSession, const NetMsgHead*
 	if(pUser == NULL)
 	{
 		pUser = UserManager::Instance()->AddWorldUser(pClientSession,&pRev->sUserData);
-		if(pUser == NULL)
+		if(pUser == NULL)// 创建内存失败 
 		{
-			// 创建内存失败 
 			FLOG_ERROR(__FUNCTION__,__LINE__,"LoadUserData Fail!");
 			return;
 		}
-
-		// 进入场景 
-		pUser->EnterScene(pUser->GetCurSceneID());
-
 	}
-	else // 踢掉老玩家
+
+	// 判断是否为相同帐号 
+	if (pUser && pUser->GetSessionID() == pRev->nSessionID)
 	{
-		// 采用回调再进行处理 
-		FLOG_WARRING(__FUNCTION__, __LINE__, "Same Character Login!,uid:%lld", nCharID);
-
-		{
-			struct stRepeatLoginCallBack : public SocketCallbackBase
-			{
-				stRepeatLoginCallBack(int32 _nCharID,int32 _nSessionID):SocketCallbackBase(0),nCharID(_nCharID),nSessionID(_nSessionID)
-				{
-
-				}
-
-				void Finished(int32 nCallbackID)
-				{
-					// 新登录用户发出到FEP，再出FEP发出登录 todo 
-					printf("[INFO]:Prefab User Had Exist\n");
-
-					ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(nSessionID);
-					ASSERT(pClientSession);
-
-					if (pClientSession == NULL)
-						return;
-
-					W2DSelectRole sMsg;
-					sMsg.nCharID = nCharID;
-					pClientSession->SendMsgToDp(&sMsg, sMsg.GetPackLength());
-				}
-				int64 nCharID;
-				int32 nSessionID;
-			};
-
-			// replogin 内存会在回调完成后，自动释放 
-			stRepeatLoginCallBack* replogin = new stRepeatLoginCallBack(nCharID,pRev->nClientSessionID);
-
-			// 发出老用客户端退出消息 
-			SSNofityClientExit sMsgExit;
-			sMsgExit.nReason = SSNofityClientExit::E_REASON_REPEAT_CHARACTER;
-			pUser->SendToFep(&sMsgExit, sMsgExit.GetPackLength(), replogin);
-		}
-		
+		pUser->EnterScene(pUser->GetCurSceneID());// 进入场景 
+		return;
 	}
 
-	// 
-	// 根据根据场景ID，分配最优的Scene，同步到Fep中去，通知Client,场景数据准备中...
+    // 踢掉老玩家,采用回调再进行处理 
+	FLOG_WARRING(__FUNCTION__, __LINE__, "Same Character Login!,uid:%lld", nCharID);
+
+	// 发出老用客户端退出消息 
+	SSNofityClientExit sMsgExit;
+	sMsgExit.stEvent = make_streble(EVENT_REMOTE_SEND_AFTER_ONLY_MSE, sMsgExit.nType, pUser->GetSessionID(), pRev->nSessionID, nCharID);
+	sMsgExit.nReason = SSNofityClientExit::E_REASON_REPEAT_CHARACTER;
+	pUser->SendToFep(&sMsgExit, sMsgExit.GetPackLength());
 
 }
 

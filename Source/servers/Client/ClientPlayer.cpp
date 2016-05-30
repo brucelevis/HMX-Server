@@ -92,7 +92,7 @@ void ClientPlayerMgr::UpdateIO()
 	{
 		if(m_arrNetClient[i] && m_arrNetClient[i]->IsConnnected())
 		{
-			m_arrNetClient[i]->Update();
+			m_arrNetClient[i]->OnUpdateRecived();
 		}		
 	}
 }

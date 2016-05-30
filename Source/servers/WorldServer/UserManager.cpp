@@ -46,7 +46,7 @@ void WorldUser::EnterScene(int32 nSceneID,int32 nPram0, int32 nPram1, int32 nPra
 
 	// 发送请求进入Scene 
 	W2SReqEnterScene sMsg;
-	sMsg.nClientSessionID = m_pClientSession->GetSessionID();
+	sMsg.nSessionID = m_pClientSession->GetSessionID();
 	sMsg.nCharacterID = m_nCharID;
 	sMsg.nSceneID = nSceneID;
 	sMsg.nDpServerID = m_pClientSession->GetDpServerID();
@@ -63,11 +63,11 @@ int32 WorldUser::GetCurSceneID()
 	return m_sData.nLandMapid;
 }
 
-void WorldUser::SendToFep(NetMsgHead* pMsg, int32 nSize, SocketCallbackBase* pCallback)
+void WorldUser::SendToFep(NetMsgHead* pMsg, int32 nSize)
 {
 	if (m_pClientSession)
 	{
-		m_pClientSession->SendMsgToFep(pMsg,nSize,pCallback);
+		m_pClientSession->SendMsgToFep(pMsg,nSize);
 	}
 }
 

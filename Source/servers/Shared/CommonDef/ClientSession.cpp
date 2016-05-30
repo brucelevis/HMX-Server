@@ -63,7 +63,7 @@ int32 ClientSession::GetSessionID()
 	return m_nSessionID;
 }
 
-void ClientSession::SendMsg(NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback)
+void ClientSession::SendMsg(NetMsgHead* pMsg,int32 nSize)
 {
 	if(OnServerType() == ESERVER_TYPE_FEP)
 	{
@@ -77,45 +77,45 @@ void ClientSession::SendMsg(NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pC
 	}else
 	{
 		ASSERT(m_pFep);
-		SendMsg(m_pFep->GetNetSocket(), pMsg, nSize, pCallback);
+		SendMsg(m_pFep->GetNetSocket(), pMsg, nSize);
 	}
 }
 
-void ClientSession::SendMsgToWs(NetMsgHead* pMsg, int32 nSize, SocketCallbackBase* pCallback)
+void ClientSession::SendMsgToWs(NetMsgHead* pMsg, int32 nSize)
 {
 	ASSERT(m_pWs);
-	SendMsg(m_pWs->GetNetSocket(), pMsg, nSize, pCallback);
+	SendMsg(m_pWs->GetNetSocket(), pMsg, nSize);
 }
 
-void ClientSession::SendMsgToSs(NetMsgHead* pMsg, int32 nSize, SocketCallbackBase* pCallback)
+void ClientSession::SendMsgToSs(NetMsgHead* pMsg, int32 nSize)
 {
 	ASSERT(m_pSs); // 由ws判断，如果ss为空，则不会调用该语句 
-	SendMsg(m_pSs->GetNetSocket(), pMsg, nSize, pCallback);
+	SendMsg(m_pSs->GetNetSocket(), pMsg, nSize);
 }
 
-void ClientSession::SendMsgToLs(NetMsgHead* pMsg, int32 nSize, SocketCallbackBase* pCallback)
+void ClientSession::SendMsgToLs(NetMsgHead* pMsg, int32 nSize)
 {
 	ASSERT(m_pLs);
-	SendMsg(m_pLs->GetNetSocket(), pMsg, nSize, pCallback);
+	SendMsg(m_pLs->GetNetSocket(), pMsg, nSize);
 }
 
-void ClientSession::SendMsgToDp(NetMsgHead* pMsg, int32 nSize, SocketCallbackBase* pCallback)
+void ClientSession::SendMsgToDp(NetMsgHead* pMsg, int32 nSize)
 {
 	ASSERT(m_pDp);
-	SendMsg(m_pDp->GetNetSocket(), pMsg, nSize, pCallback);
+	SendMsg(m_pDp->GetNetSocket(), pMsg, nSize);
 }
 
-void ClientSession::SendMsgToFep(NetMsgHead* pMsg, int32 nSize, SocketCallbackBase* pCallback)
+void ClientSession::SendMsgToFep(NetMsgHead* pMsg, int32 nSize)
 {
 	ASSERT(m_pFep);
-	SendMsg(m_pFep->GetNetSocket(), pMsg, nSize, pCallback);
+	SendMsg(m_pFep->GetNetSocket(), pMsg, nSize);
 }
 
-void ClientSession::SendMsg(NetSocket* pSocket,NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback)
+void ClientSession::SendMsg(NetSocket* pSocket,NetMsgHead* pMsg,int32 nSize)
 {
 	ASSERT(pSocket);
-	pMsg->nClientSessionID = m_nSessionID;
-	pSocket->ParkMsg(pMsg, nSize, pCallback);
+	pMsg->nSessionID = m_nSessionID;
+	pSocket->ParkMsg(pMsg, nSize);
 	pSocket->SendMsg();
 }
 
@@ -253,7 +253,7 @@ ClientSession*	ClientSessionMgr::GetSession(int32 nFepSessionID)
 }
 
 
-void ClientSessionMgr::SendToAll(NetMsgHead* pMsg,int32 nSize,EServerType eToServerType, SocketCallbackBase* pCallback)
+void ClientSessionMgr::SendToAll(NetMsgHead* pMsg,int32 nSize,EServerType eToServerType)
 {
 	ClientSessionMapType::iterator it = m_mapClientSession.begin();
 	ClientSessionMapType::iterator itEnd = m_mapClientSession.end();
@@ -262,22 +262,22 @@ void ClientSessionMgr::SendToAll(NetMsgHead* pMsg,int32 nSize,EServerType eToSer
 		switch (eToServerType)
 		{
 		case ESERVER_TYPE_NULL:
-			it->second->SendMsg(pMsg,nSize, pCallback);
+			it->second->SendMsg(pMsg,nSize);
 			break;
 		case ESERVER_TYPE_FEP:
-			it->second->SendMsgToFep(pMsg,nSize, pCallback);
+			it->second->SendMsgToFep(pMsg,nSize);
 			break;
 		case ESERVER_TYPE_LS:
-			it->second->SendMsgToLs(pMsg,nSize, pCallback);
+			it->second->SendMsgToLs(pMsg,nSize);
 			break;
 		case ESERVER_TYPE_WS:
-			it->second->SendMsgToWs(pMsg,nSize, pCallback);
+			it->second->SendMsgToWs(pMsg,nSize);
 			break;
 		case ESERVER_TYPE_SS:
-			it->second->SendMsgToSs(pMsg,nSize, pCallback);
+			it->second->SendMsgToSs(pMsg,nSize);
 			break;
 		case ESERVER_TYPE_DP:
-			it->second->SendMsgToDp(pMsg,nSize, pCallback);
+			it->second->SendMsgToDp(pMsg,nSize);
 			break;
 		default:
 			ASSERT(0);

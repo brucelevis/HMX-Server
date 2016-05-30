@@ -96,11 +96,11 @@ void ForServerMsgHandler::ReqPingToS(BaseSession* pSession, const NetMsgHead* pM
 void ForServerMsgHandler::ServerToClient(BaseSession* pSessioin,const NetMsgHead* pHead,int32 nSize)
 {
 
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pHead->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pHead->nSessionID);
 	if(pClientSession == NULL)
 	{
 		ASSERT(0);
-		FLOG_ERROR(__FUNCTION__,__LINE__,"Not Found ClientSession id: %d",pHead->nClientSessionID);
+		FLOG_ERROR(__FUNCTION__,__LINE__,"Not Found ClientSession id: %d",pHead->nSessionID);
 		return;
 	}
 	pClientSession->SendMsg(const_cast<NetMsgHead*>(pHead),nSize);
@@ -112,7 +112,7 @@ void ForServerMsgHandler::NofityClientSessionInfo(BaseSession* pSession,const Ne
 	//---------------------------------服务组代码begin-------------------------------
 	ServerCommonHandler::ForServerUpdataClientUpConnectInfo(pSession,pMsg,ESERVER_TYPE_FEP);
 	//---------------------------------服务组代码end-------------------------------
-	int32 nClientSessionID = pMsg->nClientSessionID;
+	int32 nClientSessionID = pMsg->nSessionID;
 	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(nClientSessionID);
 	if (pClientSession == NULL)
 	{

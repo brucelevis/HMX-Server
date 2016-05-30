@@ -133,7 +133,7 @@ bool TemporaryScene::DbLoadData(int32 nCSID,const void* data)
 		{
 			pTempUser->nStep = StTempUserInfo::E_STEP_REV_CHARACTER;
 			S2DLoadCharacter sMsgLoad;
-			sMsgLoad.nClientSessionID = nCSID;
+			sMsgLoad.nSessionID = nCSID;
 			sMsgLoad.nCharID = pTempUser->nCharID;
 			dpSession->SendMsg(&sMsgLoad,sMsgLoad.GetPackLength());
 			return true;
@@ -256,7 +256,7 @@ bool TemporaryScene::DbLoadData(int32 nCSID,const void* data)
 			ServerInfoOpt& infoOpt = NetServerOpt::Instance()->GetLocalServerInfo();
 
 			SSSessionNofitySInfo sNofityInfo;
-			sNofityInfo.nClientSessionID = nCSID;
+			sNofityInfo.nSessionID = nCSID;
 			sNofityInfo.nSsServerID = infoOpt.nID; // fepSession->ServerID();
 			sNofityInfo.nDpServerID = dpSession->ServerID();
 			sNofityInfo.nFepServerID = fepSession->ServerID();

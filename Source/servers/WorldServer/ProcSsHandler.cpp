@@ -48,7 +48,7 @@ void ProcSsHandler::RepEnterSceneResult(BaseSession* pSession, const NetMsgHead*
 {
 	ServerSession* pSceneSession = static_cast<ServerSession*>(pSession);
 	const S2WEnterSceneResult* packet = static_cast<const S2WEnterSceneResult*>(pMsg);
-	int32 nCSID = packet->nClientSessionID;
+	int32 nCSID = packet->nSessionID;
 	int32 nSceneID = packet->nSceneID;
 	switch(packet->nResult)
 	{
@@ -96,7 +96,7 @@ void ProcSsHandler::RepChangeScene(BaseSession* pSession, const NetMsgHead* pMsg
 	}
 
 	// 发送到Client，加载场景中
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(packet->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(packet->nSessionID);
 	if (pClientSession == NULL)
 	{
 		FLOG_ERROR(__FUNCTION__, __LINE__, "Not Found pClientSession!");

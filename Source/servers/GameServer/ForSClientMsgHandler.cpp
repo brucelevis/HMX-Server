@@ -174,7 +174,7 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgH
 	const SSNofityClientExit* packet = static_cast<const SSNofityClientExit*>(pMsg);
 
 	// 同步数据到dp上 
-	SceneUser* pCharacter = SceneUserManager::Instance()->GetUserByCSID(packet->nClientSessionID);
+	SceneUser* pCharacter = SceneUserManager::Instance()->GetUserByCSID(packet->nSessionID);
 	ASSERT(pCharacter);
 
 	pCharacter->SaveData(NULL);
@@ -186,7 +186,7 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgH
 	pCharacter->GetClientSession()->SendMsgToDp(&sMsgExit,sMsgExit.GetPackLength());
 
 	// 删除 
-	ClientSessionMgr::Instance()->RemoveSession(packet->nClientSessionID);
+	ClientSessionMgr::Instance()->RemoveSession(packet->nSessionID);
 
 	SceneUserManager::Instance()->RemoveUser(pCharacter->GetUid());
 	//---------------------------------服务组代码end---------------------------------

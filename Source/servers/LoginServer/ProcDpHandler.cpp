@@ -32,7 +32,7 @@ void ProcDpHandler::AccountLogin(BaseSession* pSession, const NetMsgHead* pMsg,i
 
 	const D2LAccountLogin* pPacker = static_cast<const D2LAccountLogin*>(pMsg);
 
-	if(ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacker->nClientSessionID))
+	if(ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacker->nSessionID))
 	{
 
 		L2CAccountLogin sMsg;
@@ -64,10 +64,10 @@ void ProcDpHandler::AccountLogin(BaseSession* pSession, const NetMsgHead* pMsg,i
 		pClientSession->SendMsgToFep(&sMsg,sMsg.GetPackLength());
 
 		// 非法登录，频繁登录检测 
-		StAccountInfo* pAccountInfo = LoginAccountMgr::Instance()->GetAccountInfo(pPacker->nClientSessionID);
+		StAccountInfo* pAccountInfo = LoginAccountMgr::Instance()->GetAccountInfo(pPacker->nSessionID);
 		if(!pAccountInfo)
 		{
-			pAccountInfo = LoginAccountMgr::Instance()->AddAccountInfo(pPacker->nClientSessionID);
+			pAccountInfo = LoginAccountMgr::Instance()->AddAccountInfo(pPacker->nSessionID);
 			if(!pAccountInfo)
 			{
 				return;
@@ -79,7 +79,7 @@ void ProcDpHandler::AccountLogin(BaseSession* pSession, const NetMsgHead* pMsg,i
 			// 处理下线 TODO 
 
 			// 删除该记录
-			LoginAccountMgr::Instance()->RemoveAccountInfo(pPacker->nClientSessionID);
+			LoginAccountMgr::Instance()->RemoveAccountInfo(pPacker->nSessionID);
 			return ;
 		}
 	}	
@@ -89,7 +89,7 @@ void ProcDpHandler::CharacterList(BaseSession* pSession, const NetMsgHead* pMsg,
 {
 
 	const D2LCharacterList* pPacket = static_cast<const D2LCharacterList*>(pMsg);
-	if(ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nClientSessionID))
+	if(ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nSessionID))
 	{
 
 		if(pClientSession->Status() != E_CLIENT_STATUS_LOGINED)
@@ -114,7 +114,7 @@ void ProcDpHandler::CharacterList(BaseSession* pSession, const NetMsgHead* pMsg,
 void ProcDpHandler::RoleCreateResult(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
 {
 	const D2LRoleCreateResult* pPacket = static_cast<const D2LRoleCreateResult*>(pMsg);
-	if(ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nClientSessionID))
+	if(ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nSessionID))
 	{
 		L2CRoleCreateResult sMsg;
 		sMsg.nResult = pPacket->nResult;

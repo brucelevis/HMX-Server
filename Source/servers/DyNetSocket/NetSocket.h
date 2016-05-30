@@ -88,7 +88,6 @@ public:
 
 };
 
-
 // socket excute callback base  
 struct SocketCallbackBase
 {
@@ -115,6 +114,45 @@ private:
 	int32 m_nCallbackID;
 
 };
+
+
+enum 
+{
+	// 100-700+ 协议是即时协议(检查收在不停地进行) 
+	EVENT_LOCAL_REVC_CLOSE = 100,
+	EVENT_LOCAL_REVC_PRE_MSG = 200,
+	EVENT_LOCAL_REVC_AFTER_MSG = 201,
+	EVENT_LOCAL_REVC_PRE_ONLY_MSG = 300,
+	EVENT_LOCAL_REVC_AFTER_ONLY_MSG = 301,
+
+	// 远程协议NetServer内部的回调函数(只本地收到协议中处理) 
+	EVENT_REMOTE_REVC_CLOSE = 500,
+	EVENT_REMOTE_REVC_PRE_MSG = 600,
+	EVENT_REMOTE_REVC_AFTER_MSG = 601,
+	EVENT_REMOTE_REVC_PRE_ONLY_MSG = 700,
+	EVENT_REMOTE_REVC_AFTER_ONLY_MSG = 701,
+
+	//-----------------------发协议处理------------------------------
+	EVENT_REMOTE_SEND_PRE_ONLY_MSG = 800,
+	EVENT_REMOTE_SEND_AFTER_ONLY_MSE = 801,
+
+};
+
+const int32 PRO_REMOTE = 10;
+struct stRemoteMsg : public NetMsgHead
+{
+	stRemoteMsg() :NetMsgHead(PRO_REMOTE)
+	{
+
+	}
+	SocketEvent stEvent;
+	inline int32 GetPackLength()const
+	{
+		return sizeof(*this);
+	}
+};
+
+
 
 // 回调协议 
 const int32 PRO_CALLBACK = 111;
@@ -158,7 +196,7 @@ public:
 	 *  Created by hzd 2013-1-21
 	 *
 	 */
-	void ParkMsg(NetMsgHead* pMsg,int32 nLength,SocketCallbackBase* call = NULL);
+	void ParkMsg(NetMsgHead* pMsg,int32 nLength);
 
 	/*
 	 *
@@ -256,10 +294,19 @@ public:
 	int32 ErrorCode(std::string& error);
 
 	// 自定义事件 
-	void OnEventCustom();
+	void AddEvent(const SocketEvent& nEvent);
 
+	void AddEventLocalClose();
+	void AddEventLocalPreMsg();
+	void AddEventLocalAfterMsg();
+	void AddEventLocalPreOnlyMsg(int32 nProtocol);
+	void AddEventLocalAfterOnlyMsg(int32 nProtocol);
 
-	void RunCallBack(int32 nCallbackID);
+	void AddEventRemotePreClose();
+	void AddEventRemotePreMsg();
+	void AddEventRemoteAfterMsg();
+	void AddEventRemotePreOnlyMsg(int32 nProtocol);
+	void AddEventRemoteAfterOnlyMsg(int32 nProtocol);
 
 private:
 
@@ -337,10 +384,14 @@ private:
 	 */
 	void HandleWait(const boost::system::error_code& error);
 
+private:
+
 	/*
 	 * 获得事件(获得一次后，记录事件会被清掉)	
 	 */
-	bool GetEvents(std::vector<int32>& o_vecEvents);
+	bool GetEvents(std::vector<SocketEvent>& o_vecEvents);
+
+	void RemoveEvents(const SocketEvent& stEvent);
 
 private:
 
@@ -358,7 +409,7 @@ private:
 	mutable_buffers_1	m_cSendBuffer;      // 发送的数据缓存绑定类 
 
 	ERecvType			m_eRecvStage;
-	uint32				m_nBodyLen;			// 主体数据长度（不包括包头） 
+	int32				m_nBodyLen;			// 主体数据长度（不包括包头） 
 	char				m_arrRecvBuffer[65536];
 
 	int32				m_bSending;
@@ -368,8 +419,6 @@ private:
 	int32				m_nMaxSendoutSize;
 
 	int32				m_nTimeout;			// 超时断开,0不,>0指定秒数 
-
-	bool				m_bExit;
 
 	/*-------------------------------------------------------------------
 	 * @Brief :
@@ -387,7 +436,24 @@ private:
 
 	std::map<int32,SocketCallbackBase*> m_mapCallback; // 自动完成后回调
 
-	std::vector<int32>	m_vecEvents;	// 事件 
+	/*-------------------------------------------------------------------
+	* @Brief :
+	*			本地协议
+	*			100:断开连接前回调退出接口
+	*			200:业务逻辑前事件回调(即时1次)
+	*			201:业务逻辑后事件回调(即时1次)
+	*			300:协议监听xxx前回调(即时1次)
+	*			301:协议监听xxx后回调(即时1次)
+	*			
+	*			远程协议
+	*			500:断开连接前回调远程接口
+	*			600:业务逻辑前事件回调远程接口(即时1次)
+	*			601:业务逻辑后事件回调远程接口(即时1次)
+	*			700:协议监听xxx前回调远程接口(即时1次)
+	*			701:协议监听xxx后回调远程接口(即时1次)
+	* @Author:hzd 2013:11:19
+	*------------------------------------------------------------------*/
+	std::vector< SocketEvent >	m_vecEvents;	// 普通事件 
 
 };
 
@@ -401,6 +467,19 @@ typedef list<NetSocket*>::iterator SocketListIter;
 typedef vector<NetSocket*> SocketVector;
 typedef vector<NetSocket*>::iterator SocketVectorIter;
 
+
+// 事件回调接口定义 
+typedef boost::function<void(NetSocket& pSocket, const SocketEvent& stEvent)> PNetEventLocalPreMsg;
+typedef boost::function<void(NetSocket& pSocket, const SocketEvent& stEvent)> PNetEventLocalAfterMsg;
+typedef boost::function<void(NetSocket& pSocket, const SocketEvent& stEvent)> PNetEventLocalPreOnlyMsg;
+typedef boost::function<void(NetSocket& pSocket, const SocketEvent& stEvent)> PNetEventLocalAfterOnlyMsg;
+
+// 本地远程回调 
+typedef boost::function<void(NetSocket& pSocket, const SocketEvent& stEvent)> PNetEventRemoteClose;
+typedef boost::function<void(NetSocket& pSocket, const SocketEvent& stEvent)> PNetEventRemotePreMsg;
+typedef boost::function<void(NetSocket& pSocket, const SocketEvent& stEvent)> PNetEventRemoteAfterMsg;
+typedef boost::function<void(NetSocket& pSocket, const SocketEvent& stEvent)> PNetEventRemotePreOnlyMsg;
+typedef boost::function<void(NetSocket& pSocket, const SocketEvent& stEvent)> PNetEventRemoteAfterOnlyMsg;
 
 #endif
 

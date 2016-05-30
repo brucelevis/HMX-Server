@@ -3,6 +3,7 @@
 
 #include "BaseSingle.h"
 #include "BaseMsgHandler.h"
+#include "NetConfig.h"
 
 /*
  *
@@ -90,6 +91,13 @@ public:
 	 *  @return :	
 	 *-------------------------------------------*/
 	void NotifyConnectInfo(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize);
+
+
+	void OnEventRemotePreOnlyMsg(NetSocket& rSocket,const SocketEvent& stEvent);
+
+	void OnEventRemoteAfterOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
+
 };
 
 #endif

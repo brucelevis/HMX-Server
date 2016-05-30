@@ -61,7 +61,7 @@ private:
 {\
 	vecMsgBuffer.resize(nSize); \
 	memcpy(&vecMsgBuffer[0], pMsg, nSize); \
-	reinterpret_cast<NetMsgHead*>(&vecMsgBuffer[0])->nClientSessionID = _nClientSessinID; \
+	reinterpret_cast<NetMsgHead*>(&vecMsgBuffer[0])->nSessionID = _nClientSessinID; \
 }\
 
 

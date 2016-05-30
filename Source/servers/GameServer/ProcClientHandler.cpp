@@ -22,7 +22,7 @@ ProcClientHandler::~ProcClientHandler(void)
 void ProcClientHandler::ReqChatWorld(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
 {
 	const C2SCharWorld* pPacket = static_cast<const C2SCharWorld*>(pMsg);
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nSessionID);
 	ASSERT(pClientSession);
 	int32 nID = pClientSession->GetSessionID();
 	stringstream ss;
@@ -39,7 +39,7 @@ void ProcClientHandler::ReqSceneData(BaseSession* pSession, const NetMsgHead* pM
 
 	// 发送场景数据 
 	const C2SSceneData* packet = static_cast<const C2SSceneData*>(pMsg);
-	if(SceneUser* pCharacter = SceneUserManager::Instance()->GetUserByCSID(packet->nClientSessionID))
+	if(SceneUser* pCharacter = SceneUserManager::Instance()->GetUserByCSID(packet->nSessionID))
 	{
 		// 前端已经准备好了 
 		pCharacter->SetClientHadReady();
@@ -57,7 +57,7 @@ void ProcClientHandler::ReqSceneData(BaseSession* pSession, const NetMsgHead* pM
 void ProcClientHandler::ReqQuestAccept(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
 {
 	const C2SSceneData* packet = static_cast<const C2SSceneData*>(pMsg);
-	if(SceneUser* pCharacter = SceneUserManager::Instance()->GetUserByCSID(packet->nClientSessionID))
+	if(SceneUser* pCharacter = SceneUserManager::Instance()->GetUserByCSID(packet->nSessionID))
 	{
 
 
@@ -68,7 +68,7 @@ void ProcClientHandler::ReqChangeScene(BaseSession* pSession, const NetMsgHead* 
 {
 	
 	const C2SChanageScene* packet = static_cast<const C2SChanageScene*>(pMsg);
-	if (SceneUser* pUser = SceneUserManager::Instance()->GetUserByCSID(packet->nClientSessionID))
+	if (SceneUser* pUser = SceneUserManager::Instance()->GetUserByCSID(packet->nSessionID))
 	{
 		int32 nEnterSceneID = packet->nSceneID;
 		SceneMap* pOldSceneMap = pUser->GetSceneMap();
@@ -77,7 +77,7 @@ void ProcClientHandler::ReqChangeScene(BaseSession* pSession, const NetMsgHead* 
 		{
 			// 检查玩家能进入该Scene的资格，能不能进入该场景，则由其他配置判断 
 			SceneMapManager::Instance()->DelSceneEnity(*pUser);
-			TemporaryScene::Instance()->EnterUserLocal(packet->nClientSessionID, pUser->GetUid(), nEnterSceneID);
+			TemporaryScene::Instance()->EnterUserLocal(packet->nSessionID, pUser->GetUid(), nEnterSceneID);
 			return;
 		}
 		else// 需要请求到ws中去验证

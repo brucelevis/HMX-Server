@@ -26,7 +26,7 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	void   InitBuffer(uint32 nMax);
+	void InitBuffer(int32 nMax);
 
 	/*
 	 *
@@ -35,7 +35,7 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	void   ReleaseBuffer();
+	void ReleaseBuffer();
 
 	/*
 	 *
@@ -44,7 +44,7 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	bool   Write(char* c, uint32 nLen);
+	bool Write(char* c, int32 nLen);
 
 	/*
 	 *
@@ -53,7 +53,7 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	void   Read(void** b, uint32 nLen);
+	void Read(void** b, int32 nLen);
 
 	/*
 	 *
@@ -62,7 +62,7 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	uint32 ReadRemove(void* pMsg,uint32 nLen);
+	int32 ReadRemove(void* pMsg, int32 nLen);
 
 	/*
 	 *
@@ -71,7 +71,7 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	void   RemoveBuffer(uint32 nLen);
+	void RemoveBuffer(int32 nLen);
 
 	/*
 	 *
@@ -80,7 +80,7 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	uint32 GetLen();
+	int32 GetLen();
 
 	/*
 	 *
@@ -89,7 +89,7 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	uint32 GetSpace();
+	int32 GetSpace();
 
 	/*
 	 *
@@ -98,7 +98,7 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	void*  GetBuffer();
+	void* GetBuffer();
 
 	/*
 	 *
@@ -107,7 +107,7 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	void*  GetStart();
+	void* GetStart();
 
 	/*
 	 *
@@ -116,7 +116,7 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	void*  GetBufferEnd();
+	void* GetBufferEnd();
 
 	/*
 	 *
@@ -125,7 +125,7 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	void   ClearBuffer();
+	void ClearBuffer();
 
 	/*
 	 *
@@ -134,16 +134,16 @@ public:
 	 *  Created by hzd 2015/05/31  
 	 *
 	 */
-	void   MoveBuffer();
+	void MoveBuffer();
 
 protected:
 
 	mutex   m_cMutex;		// 读/写锁 
-	uint32  m_nBegin;       // 下一次读/写的位置 
-	uint32  m_nLen;			// 已经接收数据长度(可能有多个包)  
+	int32  m_nBegin;       // 下一次读/写的位置 
+	int32  m_nLen;			// 已经接收数据长度(可能有多个包)  
 	char*   m_pBuffer;		// 字段容器  
 	char*	m_pBuffer2;		// 字段容器2 
-	uint32	m_nMax;         // 最大字段长度  
+	int32	m_nMax;         // 最大字段长度  
 
 };
 

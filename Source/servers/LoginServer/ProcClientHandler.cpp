@@ -25,7 +25,7 @@ void ProcClientHandler::ReqAccountLogin(BaseSession* pSession, const NetMsgHead*
 
 	// 检查字符串是否合法 TODO
 
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nSessionID);
 	ASSERT(pClientSession);
 
 	L2DAccountLogin sMsg;
@@ -40,7 +40,7 @@ void ProcClientHandler::ReqRoleCreate(BaseSession* pSession, const NetMsgHead* p
 {
 
 	// 发送到db请求创建 
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pMsg->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pMsg->nSessionID);
 	ASSERT(pClientSession);
 
 	const C2LRoleCreate* pPacket = static_cast<const C2LRoleCreate*>(pMsg);
@@ -71,7 +71,7 @@ void ProcClientHandler::ReqRandNames(BaseSession* pSession, const NetMsgHead* pM
 	// Login中本来就已经加载了所有的昵称，在这里会选择可能性大没有使用过的昵称 
 
 	const C2LRandNames* packet = static_cast<const C2LRandNames*>(pMsg);
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(packet->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(packet->nSessionID);
 	ASSERT(pClientSession);
 
 	L2CNamesList sMsg;

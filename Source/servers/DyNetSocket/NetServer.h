@@ -23,7 +23,7 @@ public:
 	 *  Created by hzd 2012/04/03
 	 *
 	 */
-	NetServer(int32 nMaxConnected,int32 nMaxRecivedSize = 10 * 1024 /* 最大收到单包大小 */ ,int32 nMaxSendoutSize = 10 * 1024/* 最大一次发送大小(1+包) */,int32 nMaxRecivedCacheSize = 64 * 1024/* 最大接收缓存大小 */,int32 nMaxSendoutCacheSize = 64 * 1024/* 最大发送缓存大小 */ );
+	NetServer(int32 nMaxConnected, int32 nMaxRecivedSize = 10 * 1024 /* 最大收到单包大小 */, int32 nMaxSendoutSize = 10 * 1024/* 最大一次发送大小(1+包) */, int32 nMaxRecivedCacheSize = 64 * 1024/* 最大接收缓存大小 */, int32 nMaxSendoutCacheSize = 64 * 1024/* 最大发送缓存大小 */);
 	virtual ~NetServer();
 
 	/*
@@ -47,7 +47,7 @@ public:
 	/*
 	 *
 	 *	Detail: 设置默认回调
-	 *   
+	 *
 	 * Copyright (c) Created by hzd 2013-4-25.All rights reserved
 	 *
 	 */
@@ -56,7 +56,7 @@ public:
 	/*
 	 *
 	 *	Detail: 超时断开时间(秒)
-	 *   
+	 *
 	 *  Created by hzd 2013-6-2
 	 *
 	 */
@@ -124,7 +124,7 @@ public:
 	 *  Created by hzd 2013-4-16
 	 *
 	 */
-	int32 ConnectedSockets();
+	size_t ConnectedSockets();
 
 	/*
 	 *
@@ -133,14 +133,14 @@ public:
 	 *  Created by hzd 2013-4-16
 	 *
 	 */
-	int32 AcceptingSockets();
+	size_t AcceptingSockets();
 
 protected:
 
 	/*
 	 *
 	 *	Detail: 有新连接
-	 *   
+	 *
 	 * Copyright (c) Created by hzd 2013-4-25.All rights reserved
 	 *
 	 */
@@ -148,24 +148,38 @@ protected:
 
 	/*
 	 *
-	 *	Detail: 有消息 
-	 *   
+	 *	Detail: 有消息
+	 *
 	 * Copyright (c) Created by hzd 2013-4-25.All rights reserved
 	 *
 	 */
-	virtual void MsgRecived(NetSocket& pSocket, NetMsgHead* pMsg,int32 nSize);
+	virtual void MsgRecived(NetSocket& pSocket, NetMsgHead* pMsg, int32 nSize);
 
 	/*
 	 *
 	 *	Detail: 连接断开
-	 *   
+	 *
 	 * Copyright (c) Created by hzd 2013-4-25.All rights reserved
 	 *
 	 */
 	virtual void MsgDisconnect(NetSocket& pSocket);
 
+	/*
+	 *	事件定义
+	 */
+	virtual void EventLocalPreMsg(NetSocket& pSocket, const SocketEvent& sEvent) {}
+	virtual void EventLocalAfterMsg(NetSocket& pSocket, const SocketEvent& sEvent) {}
+	virtual void EventLocalPreOnlyMsg(NetSocket& pSocket, const SocketEvent& sEvent) {}
+	virtual void EventLocalAfterOnlyMsg(NetSocket& pSocket, const SocketEvent& sEvent) {}
+
+	virtual void EventRemoteColse(NetSocket& pSocket, const SocketEvent& sEvent) {}
+	virtual void EventRemotePreMsg(NetSocket& pSocket, const SocketEvent& sEvent) {}
+	virtual void EventRemoteAfterMsg(NetSocket& pSocket, const SocketEvent& sEvent) {}
+	virtual void EventRemotePreOnlyMsg(NetSocket& pSocket, const SocketEvent& sEvent) {}
+	virtual void EventRemoteAfterOnlyMsg(NetSocket& pSocket, const SocketEvent& sEvent) {}
+
 private:
-	
+
 	/*
 	 *
 	 *	Detail: IO循环处理
@@ -182,7 +196,7 @@ private:
 	 *  Created by hzd 2013/01/23
 	 *
 	 */
-	void   HandleStart();
+	void HandleStart();
 
 	/*
 	 *
@@ -191,12 +205,12 @@ private:
 	 *  Created by hzd 2013/01/23
 	 *
 	 */
-	void   HandleAccept(const boost::system::error_code& error, NetSocket* socket);
+	void HandleAccept(const boost::system::error_code& error, NetSocket* socket);
 
 	/*
 	 *
 	 *	Detail: 处理连理进入
-	 *   
+	 *
 	 * Copyright (c) Created by hzd 2013-4-25.All rights reserved
 	 *
 	 */
@@ -205,14 +219,61 @@ private:
 	/*
 	 *
 	 *	Detail: 处理有消息Socket
-	 *   
+	 *
 	 * Copyright (c) Created by hzd 2013-4-25.All rights reserved
 	 *
 	 */
 	void OnUpdateRecived();
 
+public:
+
+	void SetEventLocalPreMsg(PNetEventLocalPreMsg _localPreMsg)
+	{
+		localPreMsg = _localPreMsg;
+	}
+
+	void SetEventLocalAfterMsg(PNetEventLocalAfterMsg _localAfterMsg)
+	{
+		localAfterMsg = _localAfterMsg;
+	}
+
+	void SetEventLcalAfterOnlyMsg(PNetEventLocalPreOnlyMsg _localPreOnlyMsg)
+	{
+		localPreOnlyMsg = _localPreOnlyMsg;
+	}
+
+	void SetEventLocalAfterOnlyMsg(PNetEventLocalAfterOnlyMsg _localAfterOnlyMsg)
+	{
+		localAfterOnlyMsg = _localAfterOnlyMsg;
+	}
+
+	void SetEventRemoteClose(PNetEventRemoteClose _remoteClose)
+	{
+		remoteClose = _remoteClose;
+	}
+
+	void SetEventRemotePreMsg(PNetEventRemotePreMsg _remotePreMsg)
+	{
+		remotePreMsg = _remotePreMsg;
+	}
+
+	void SetEventRemoteAfterMsg(PNetEventRemoteAfterMsg _remoteAfterMsg)
+	{
+		remoteAfterMsg = _remoteAfterMsg;
+	}
+
+	void SetEventRemotePreOnlyMsg(PNetEventRemotePreOnlyMsg _remotePreOnlyMsg)
+	{
+		remotePreOnlyMsg = _remotePreOnlyMsg;
+	}
+
+	void SetEventRemoteAfterOnlyMsg(PNetEventRemoteAfterOnlyMsg _remoteAfterOnlyMsg)
+	{
+		remoteAfterOnlyMsg = _remoteAfterOnlyMsg;
+	}
 
 private:
+	friend class NetServerMgr;
 
 	int32			m_nMaxConnected;			// 最大Socket连接数 < 65536 
 	int32			m_nServerID;				// 服务器标识唯一ID  
@@ -232,7 +293,18 @@ private:
 
 	mutex   m_cClientListMutex;
 
-	friend class NetServerMgr;
+	// 本地协议，需要read前后时直接作处理 
+	PNetEventLocalPreMsg			localPreMsg;
+	PNetEventLocalAfterMsg			localAfterMsg;
+	PNetEventLocalPreOnlyMsg		localPreOnlyMsg;
+	PNetEventLocalAfterOnlyMsg		localAfterOnlyMsg;
+
+	// 远程协议，为Server.update中的获得处理,对于某用户的协议，需要判断其sessionID  
+	PNetEventRemoteClose			remoteClose;
+	PNetEventRemotePreMsg			remotePreMsg;
+	PNetEventRemoteAfterMsg			remoteAfterMsg;
+	PNetEventRemotePreOnlyMsg		remotePreOnlyMsg;
+	PNetEventRemoteAfterOnlyMsg		remoteAfterOnlyMsg;
 
 };
 

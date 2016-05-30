@@ -81,7 +81,7 @@ void ProcWorldHandler::ReqSelectRole(BaseSession* pBaseSession, const NetMsgHead
 	const W2DSelectRole* pPacket = static_cast<const W2DSelectRole*>(pMsg);
 
 	// 检查内存是否存在等 
-	int32 nMyCSID = pPacket->nClientSessionID;
+	int32 nMyCSID = pPacket->nSessionID;
 
 	struct MyUserDataCallBack : public StCallBackInfo
 	{

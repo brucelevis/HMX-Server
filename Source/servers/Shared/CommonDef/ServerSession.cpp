@@ -18,9 +18,9 @@ ServerSession::~ServerSession()
 {
 }
 
-void ServerSession::SendMsg(NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback)
+void ServerSession::SendMsg(NetMsgHead* pMsg,int32 nSize)
 {
-	m_pSocket->ParkMsg(pMsg, nSize, pCallback);
+	m_pSocket->ParkMsg(pMsg, nSize);
 	m_pSocket->SendMsg();
 }
 

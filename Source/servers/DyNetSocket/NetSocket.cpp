@@ -19,7 +19,6 @@ NetSocket::NetSocket(io_service& rIo_service,int32 nMaxRecivedSize,int32 nMaxSen
 	, m_nBodyLen(0)
 	, m_eRecvStage(REVC_FSRS_NULL)
 	, m_bSending(false)
-	, m_bExit(false)
 	, m_cTimer(rIo_service)
 	, m_cCloseTimer(rIo_service)
 	, m_nMaxSendoutSize(nMaxSendoutSize)
@@ -58,7 +57,7 @@ void NetSocket::ReadBody()
 void NetSocket::Disconnect()
 {
 	m_cCloseTimer.cancel();
-	m_cCloseTimer.expires_from_now(boost::posix_time::seconds(1));
+	m_cCloseTimer.expires_from_now(boost::posix_time::seconds(0));
 	m_cCloseTimer.async_wait(boost::bind(&NetSocket::HandleClose, this, boost::asio::placeholders::error));
 }
 
@@ -95,11 +94,6 @@ void NetSocket::HandleClose(const boost::system::error_code& error)
 
 EMsgRead NetSocket::ReadMsg(NetMsgHead** pMsg,int32& nSize)
 {
-	if(m_bExit)
-	{
-		printf("[INFO]:m_bExit == true\n");
-		return MSG_READ_INVALID;
-	}	
 
 	if(m_cIBuffer.GetLen() < PACKAGE_HEADER_SIZE) 
 		return MSG_READ_WAITTING;
@@ -126,7 +120,7 @@ void NetSocket::RecvMsg(const boost::system::error_code& ec, size_t bytes_transf
 	if(ec)
 	{
 		printf("[ERROR]:Recv error msg,%s\n",ec.message().c_str());
-		m_bExit = true;
+		AddEventLocalClose();
 		m_errorCode = ESOCKET_EXIST_REMOTE;
 		return;
 	}
@@ -140,7 +134,7 @@ void NetSocket::RecvMsg(const boost::system::error_code& ec, size_t bytes_transf
 			if(m_nBodyLen < sizeof(NetMsgHead) || m_nBodyLen > m_nMaxRecivedSize)
 			{
 			   printf("[ERROR]:Recv data length,bodylen:%d, maxLimitLength:%d\n",m_nBodyLen,m_nMaxRecivedSize);
-			   m_bExit = true;
+			   AddEventLocalClose();
 			   m_errorCode = ESOCKET_EXIST_PACK_LENGTH_ERROR;
 			   m_nBodyLen = 0;
 			   return;
@@ -149,7 +143,7 @@ void NetSocket::RecvMsg(const boost::system::error_code& ec, size_t bytes_transf
 			if(!bResult)
 			{
 				printf("[ERROR]:Write too much data to buffer\n");
-				m_bExit = true;
+				AddEventLocalClose();
 				m_errorCode = ESOCKET_EXIST_WRITE_TOO_DATA;
 				return;
 			}
@@ -163,7 +157,7 @@ void NetSocket::RecvMsg(const boost::system::error_code& ec, size_t bytes_transf
 			if(!bResult)
 			{
 				printf("[ERROR]:Write too much data to buffer\n");
-				m_bExit = true;
+				AddEventLocalClose();
 				m_errorCode = ESOCKET_EXIST_WRITE_TOO_DATA;
 				return;
 			}
@@ -183,27 +177,84 @@ void NetSocket::Clear()
 {
 	m_bSending = false;
 	m_nBodyLen = 0;
-	m_bExit = false;
 	m_eRecvStage = REVC_FSRS_NULL;
 	m_cIBuffer.ClearBuffer();
 	m_cOBuffer.ClearBuffer();
 }
 
-void NetSocket::ParkMsg(NetMsgHead* pMsg,int32 nLength,SocketCallbackBase* call)
+void NetSocket::ParkMsg(NetMsgHead* pMsg,int32 nLength)
 {
 	ASSERT(nLength < 65336);
 
-	if (call && call->GetCallbackID())
+	if (!m_vecEvents.empty())
 	{
-		m_mapCallback.insert(std::make_pair(call->GetCallbackID(), call));
-		pMsg->nCallbackID = call->GetCallbackID();
-		printf("[INFO]:ParkMsg had callback ID:%d\n",call->GetCallbackID());
+		std::vector<SocketEvent> vecEvents;
+		GetEvents(vecEvents);
+		for (std::vector<SocketEvent>::iterator it = vecEvents.begin(); it != vecEvents.end(); ++it)
+		{
+			SocketEvent& stEvent = *it;
+			switch (stEvent.first)
+			{
+			case EVENT_REMOTE_SEND_PRE_ONLY_MSG:
+			{
+				if (stEvent.second == pMsg->nType && stEvent.third == pMsg->nSessionID)
+				{
+					stRemoteMsg sRmMsg;
+					sRmMsg.stEvent = stEvent;
+					int32 nRmLen = sRmMsg.GetPackLength();
+					char arrLen[PACKAGE_HEADER_SIZE];
+					memcpy(arrLen, &nRmLen, PACKAGE_HEADER_SIZE);
+					m_cOBuffer.Write(arrLen, PACKAGE_HEADER_SIZE);
+					m_cOBuffer.Write((char*)&sRmMsg, nRmLen);
+					RemoveEvents(stEvent);
+				}
+			}
+			break;
+			default:
+				printf("[INFO]:Not Found event:%d\n", stEvent.first);
+				break;
+			}
+		}
 	}
 
-	char arrLen[PACKAGE_HEADER_SIZE];
-	memcpy(arrLen, &nLength, PACKAGE_HEADER_SIZE);
-	m_cOBuffer.Write(arrLen, PACKAGE_HEADER_SIZE);
-	m_cOBuffer.Write((char*)pMsg, nLength);
+	{
+		char arrLen[PACKAGE_HEADER_SIZE];
+		memcpy(arrLen, &nLength, PACKAGE_HEADER_SIZE);
+		m_cOBuffer.Write(arrLen, PACKAGE_HEADER_SIZE);
+		m_cOBuffer.Write((char*)pMsg, nLength);
+	}
+
+	if (!m_vecEvents.empty())
+	{
+		std::vector<SocketEvent> vecEvents;
+		GetEvents(vecEvents);
+		for (std::vector<SocketEvent>::iterator it = vecEvents.begin(); it != vecEvents.end(); ++it)
+		{
+			SocketEvent& stEvent = *it;
+			switch (stEvent.first)
+			{
+			case EVENT_REMOTE_SEND_AFTER_ONLY_MSE:
+			{
+				if (stEvent.second == pMsg->nType && stEvent.third == pMsg->nSessionID)
+				{
+					stRemoteMsg sRmMsg;
+					sRmMsg.stEvent = stEvent;
+					int32 nRmLen = sRmMsg.GetPackLength();
+					char arrLen[PACKAGE_HEADER_SIZE];
+					memcpy(arrLen, &nRmLen, PACKAGE_HEADER_SIZE);
+					m_cOBuffer.Write(arrLen, PACKAGE_HEADER_SIZE);
+					m_cOBuffer.Write((char*)&sRmMsg, nRmLen);
+					RemoveEvents(stEvent);
+				}
+			}
+			break;
+			default:
+				printf("[INFO]:Not Found event:%d\n", stEvent.first);
+				break;
+			}
+		}
+	}
+
 }
 
 void NetSocket::SendMsg()
@@ -223,7 +274,7 @@ void NetSocket::SendMsg(const boost::system::error_code& ec, size_t bytes_transf
 	if(ec)
 	{
 		printf("[ERROR]:Send msg date error\n");
-		m_bExit = true;
+		AddEventLocalClose();
 		m_errorCode = ESCOKET_EXIST_SEND_CONNECT_INVAILD;
 		return;
 	}
@@ -244,7 +295,7 @@ void NetSocket::HandleWait(const boost::system::error_code& error)
 		return;
 	}
 	printf("[INFO]:That is timeout!\n");
-	m_bExit = true;
+	AddEventLocalClose();
 	m_errorCode = ESOCKET_EXIST_TIMEOUT;
 }
 
@@ -261,8 +312,8 @@ const string NetSocket::GetIp()
 
 void NetSocket::OnEventColse()
 {
-	printf("[WARRING]:SetWillColse\n");
-	m_bExit = true;
+	printf("[WARRING]:OnEventColse\n");
+	AddEventLocalClose();
 	m_errorCode = ESOCKET_EXIST_LOCAL;
 }
 
@@ -323,26 +374,80 @@ int32 NetSocket::ErrorCode(std::string& error)
 	return m_errorCode;
 }
 
-void NetSocket::RunCallBack(int32 nCallbackID)
-{
-	std::map<int32, SocketCallbackBase*>::iterator it = m_mapCallback.find(nCallbackID);
-	if (it != m_mapCallback.end())
-	{
-		it->second->Finished(nCallbackID);
-		m_mapCallback.erase(it);
-	}
-}
-
-bool NetSocket::GetEvents(std::vector<int32>& o_vecEvents)
+bool NetSocket::GetEvents(std::vector<SocketEvent>& o_vecEvents)
 {
 	if (!m_vecEvents.empty())
 	{
 		o_vecEvents.resize(m_vecEvents.size());
 		std::copy(m_vecEvents.begin(), m_vecEvents.end(),o_vecEvents.begin());
-		m_vecEvents.clear();
 	}
 	return !o_vecEvents.empty();
 }
+
+void NetSocket::RemoveEvents(const SocketEvent& stEvent)
+{
+	std::vector<SocketEvent>::iterator it = std::find(m_vecEvents.begin(), m_vecEvents.end(), stEvent);
+	if ( it != m_vecEvents.end())
+	{
+		m_vecEvents.erase(it);
+	}
+}
+
+void NetSocket::AddEvent(const SocketEvent& nEvent)
+{
+	m_vecEvents.push_back(nEvent);
+}
+
+void NetSocket::AddEventLocalClose()
+{
+	m_vecEvents.push_back(make_streble(EVENT_LOCAL_REVC_CLOSE, 0, 0, 0, 0));
+}
+
+void NetSocket::AddEventLocalPreMsg()
+{
+
+}
+
+void NetSocket::AddEventLocalAfterMsg()
+{
+
+}
+
+void NetSocket::AddEventLocalPreOnlyMsg(int32 nProtocol)
+{
+
+}
+
+void NetSocket::AddEventLocalAfterOnlyMsg(int32 nProtocol)
+{
+
+}
+
+void NetSocket::AddEventRemotePreClose()
+{
+
+}
+
+void NetSocket::AddEventRemotePreMsg()
+{
+
+}
+
+void NetSocket::AddEventRemoteAfterMsg()
+{
+
+}
+
+void NetSocket::AddEventRemotePreOnlyMsg(int32 nProtocol)
+{
+
+}
+
+void NetSocket::AddEventRemoteAfterOnlyMsg(int32 nProtocol)
+{
+
+}
+
 
 
 

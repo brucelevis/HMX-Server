@@ -214,7 +214,7 @@ void ForClientMsgHandler::ReqFepEncyptHandler(BaseSession* pSession,const NetMsg
 
 		// 请求分配服务器 ID 
 		SSReqLoadLest sMsgLoadLest;
-		sMsgLoadLest.nClientSessionID = pClientSession->GetSessionID();
+		sMsgLoadLest.nSessionID = pClientSession->GetSessionID();
 		pClientSession->SendMsgToWs(&sMsgLoadLest,sMsgLoadLest.GetPackLength());
 
 	}else
@@ -224,16 +224,7 @@ void ForClientMsgHandler::ReqFepEncyptHandler(BaseSession* pSession,const NetMsg
 	//---------------------------------服务组代码end-------------------------------
 }
 
-// 来自SS,LS,WS请求该该角色下线 
-//void ForClientMsgHandler::ReqFepCloseHandler(BaseSession* pSession,const NetMsgHead* pMsg,int32 nSize)
-//{
-//	// 不允许客户端请求服务端来主动断开这种方式，只能由客户端socket.close()方式 
-//
-//	//Disconnected(nClientSessionID, nErrorCode);
-//}
-
-
-
+// 来自serversocket onexist 
 void ForClientMsgHandler::Disconnected(int32 nClientSessionID, int32 nErrorCode)
 {
 	// 通知Ws,Ws再通知ls,dp，如果玩家在ss中，则会通知 
@@ -244,7 +235,6 @@ void ForClientMsgHandler::Disconnected(int32 nClientSessionID, int32 nErrorCode)
 	if (pClientSession->Status() < E_CLIENT_STATUS_ENCRYPTED)
 	{
 		// 删除ClientSession
-		pClientSession->Exist();
 		ClientSessionMgr::Instance()->RemoveSession(nClientSessionID);
 		return;
 	}
@@ -281,7 +271,6 @@ void ForClientMsgHandler::Disconnected(int32 nClientSessionID, int32 nErrorCode)
 	pClientSession->SendMsgToWs(&sMsgExit, sMsgExit.GetPackLength());
 
 	// 删除ClientSession
-	pClientSession->Exist();
 	ClientSessionMgr::Instance()->RemoveSession(nClientSessionID);
 }
 

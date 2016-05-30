@@ -97,7 +97,7 @@ void ServerConnectMgr::Update(int32 nSrvTime)
 			NetClient* pNetClient = (*it)->pNetClient;
 			if (pNetClient)
 			{
-				pNetClient->Update();//1
+				pNetClient->OnUpdateRecived();//1
 			}
 		}
 

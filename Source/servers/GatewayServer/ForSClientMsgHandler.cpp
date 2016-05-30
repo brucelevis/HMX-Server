@@ -94,7 +94,7 @@ void ForSClientMsgHandler::NofityClientSessionInfo(BaseSession* pSession, const 
 	//---------------------------------服务组代码begin-------------------------------
 	ServerCommonHandler::ForServerUpdataClientUpConnectInfo(pSession,pMsg,ESERVER_TYPE_FEP);
 	//---------------------------------服务组代码end-------------------------------
-	int32 nClientSessionID = pMsg->nClientSessionID;
+	int32 nClientSessionID = pMsg->nSessionID;
 	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(nClientSessionID);
 	if (pClientSession == NULL)
 	{
@@ -121,7 +121,7 @@ void ForSClientMsgHandler::RepPingToS(BaseSession* pSession, const NetMsgHead* p
 void ForSClientMsgHandler::ServerToClient(BaseSession* pSessioin,const NetMsgHead* pHead,int32 nSize)
 {
 
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pHead->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pHead->nSessionID);
 	if(pClientSession == NULL)
 	{
 		return;
@@ -135,7 +135,7 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSessioin, const NetMsg
 	const SSNofityClientExit* packet = static_cast<const SSNofityClientExit*>(pMsg);
 
 	// 通知Ws,Ws再通知ls,dp，如果玩家在ss中，则会通知 
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(packet->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(packet->nSessionID);
 	if (pClientSession == NULL)
 	{
 		ASSERT(pClientSession);
@@ -143,4 +143,7 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSessioin, const NetMsg
 	}
 	pClientSession->Exist();
 	
+	ServerSession* pServerSession = static_cast<ServerSession*>(pSessioin);
+	//pServerSession->GetNetSocket()->AddEventRemoteAfterOnlyMsg()
+
 }

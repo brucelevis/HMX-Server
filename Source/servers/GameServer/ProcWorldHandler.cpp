@@ -32,7 +32,7 @@ void ProcWorldHandler::ReqEnterScene(BaseSession* pSession, const NetMsgHead* pM
 		return;
 	}
 
-	TemporaryScene::Instance()->EnterUser(packet->nClientSessionID,packet->nCharacterID,packet->nSceneID,packet->nDpServerID,packet->nFepServerID);
+	TemporaryScene::Instance()->EnterUser(packet->nSessionID,packet->nCharacterID,packet->nSceneID,packet->nDpServerID,packet->nFepServerID);
 
 }
 
@@ -44,7 +44,7 @@ void ProcWorldHandler::ReqEnterResult(BaseSession* pSession, const NetMsgHead* p
 	{
 		// 成功，删除本地内存即可，无需要其他处理
 		SceneUserManager::Instance()->RemoveUser(packet->nCharID);
-		ClientSessionMgr::Instance()->RemoveSession(packet->nClientSessionID);
+		ClientSessionMgr::Instance()->RemoveSession(packet->nSessionID);
 	}
 	else if (packet->nResult == W2SRepEnterResult::E_ENTER_FAIL)
 	{

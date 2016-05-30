@@ -87,7 +87,7 @@ void ForSClientMsgHandler::NofityClientSessionInfo(BaseSession* pSession, const 
 void ForSClientMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgHead* pMsg, int32 nSize)
 {
 	const SSNofityClientExit* pPacket = static_cast<const SSNofityClientExit*>(pMsg);
-	int32 nClientSessionID = pPacket->nClientSessionID;
+	int32 nClientSessionID = pPacket->nSessionID;
 
 	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(nClientSessionID);
 	ASSERT(pClientSession);

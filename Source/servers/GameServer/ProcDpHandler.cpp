@@ -22,7 +22,7 @@ void ProcDpHandler::RevLoadUserData(BaseSession* pSession, const NetMsgHead* pMs
 
 	const D2SLoadCharacter* packet = static_cast<const D2SLoadCharacter*>(pMsg);
 
-	TemporaryScene::Instance()->DbLoadData(packet->nClientSessionID,&(packet->sUserData));
+	TemporaryScene::Instance()->DbLoadData(packet->nSessionID,&(packet->sUserData));
 
 }
 

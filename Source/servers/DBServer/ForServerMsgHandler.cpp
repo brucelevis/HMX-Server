@@ -106,12 +106,12 @@ void ForServerMsgHandler::ReqClientExitScene(BaseSession* pBaseSession, const Ne
 	const SSNofityClientExit* packet = static_cast<const SSNofityClientExit*>(pMsg);
 	if(packet->nReason != SSNofityClientExit::E_REASON_SWITCH_SCENE)
 	{
-		int64 nCharID = MemoryManager::Instance()->GetUserIDBySessionID(packet->nClientSessionID);
+		int64 nCharID = MemoryManager::Instance()->GetUserIDBySessionID(packet->nSessionID);
 		if (nCharID)
 		{
 			MemoryManager::Instance()->SaveNowByUID(nCharID);
 			MemoryManager::Instance()->RemoveByUID(nCharID);
 		}
-		ClientSessionMgr::Instance()->RemoveSession(packet->nClientSessionID);
+		ClientSessionMgr::Instance()->RemoveSession(packet->nSessionID);
 	}
 }

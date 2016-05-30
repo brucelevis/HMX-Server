@@ -178,10 +178,10 @@ public:
 	{
 		ServerSession* pServerSession = static_cast<ServerSession*>(pSession);
 		const SSSessionNofitySInfo* pPacket = static_cast<const SSSessionNofitySInfo*>(pMsg);
-		ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nClientSessionID);
+		ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nSessionID);
 		if (pClientSession == NULL)
 		{
-			pClientSession = ClientSessionMgr::Instance()->AddSession(pPacket->nClientSessionID);
+			pClientSession = ClientSessionMgr::Instance()->AddSession(pPacket->nSessionID);
 			ASSERT(pClientSession);
 			pClientSession->SetForRemoteWs(pServerSession);
 		}
@@ -326,7 +326,7 @@ public:
 	{
 		ServerSession* pServerSession = static_cast<ServerSession*>(pSession);
 		const SSSessionNofitySInfo* pPacket = static_cast<const SSSessionNofitySInfo*>(pMsg);
-		int32 nClientSessionID = pPacket->nClientSessionID;
+		int32 nClientSessionID = pPacket->nSessionID;
 		ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(nClientSessionID);
 		if(pClientSession == NULL)
 		{

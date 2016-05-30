@@ -109,14 +109,14 @@ void ForSClientMsgHandler::NofityClientSessionInfo(BaseSession* pSession, const 
 void ForSClientMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgHead* pMsg, int32 nSize)
 {
 	const SSNofityClientExit* pPacket = static_cast<const SSNofityClientExit*>(pMsg);
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nSessionID);
 	if(pClientSession == NULL)
 	{
 		ASSERT(pClientSession);
 		return;
 	}
 
-	int64 nCharID = MemoryManager::Instance()->GetUserIDBySessionID(pPacket->nClientSessionID);
+	int64 nCharID = MemoryManager::Instance()->GetUserIDBySessionID(pPacket->nSessionID);
 
 	if (nCharID)
 	{
@@ -130,7 +130,7 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgH
 	 *			退出reason参数 
 	 * @Author:hzd 2015:11:20
 	 *------------------------------------------------------------------*/
-	ClientSessionMgr::Instance()->RemoveSession(pPacket->nClientSessionID);
+	ClientSessionMgr::Instance()->RemoveSession(pPacket->nSessionID);
 
 }
 

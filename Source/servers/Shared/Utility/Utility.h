@@ -290,6 +290,20 @@ inline void stringtok(Container &container, std::string const &in,
 	}
 }
 
+template<typename T1, typename T2, typename T3> struct my_streble
+{
+	T1 first;
+	T2 second;
+	T3 third;
+	my_streble() :first(), second(), third(){}
+	my_streble(const T1& t1, const T2& t2, const T3& t3) :first(t1), second(t2), third(t3){}
+	template<typename U1,typename U2,typename U3> my_streble(const my_streble<U1, U2, U3>& _streble) : first(_streble.first), second(_streble.second), third(_streble.third){}
+};
+template<typename T1,typename T2,typename T3> inline my_streble<T1, T2, T3> make_my_streble(T1 x,T2 y,T3 z)
+{
+	return my_streble<T1, T2, T3>(x, y, z);
+}
+
 #endif
 
 

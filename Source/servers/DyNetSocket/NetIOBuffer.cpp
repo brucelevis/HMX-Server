@@ -15,7 +15,7 @@ NetIOBuffer::~NetIOBuffer()
 {
 }
 
-void NetIOBuffer::InitBuffer(uint32 nMax)
+void NetIOBuffer::InitBuffer(int32 nMax)
 {
 	m_nMax = nMax;
 	if(m_pBuffer)
@@ -36,7 +36,7 @@ void NetIOBuffer::ReleaseBuffer()
 	}
 }
 
-bool NetIOBuffer::Write(char* recvBuf, uint32 bodyLen)
+bool NetIOBuffer::Write(char* recvBuf, int32 bodyLen)
 {
 	mutex::scoped_lock lock(m_cMutex);
 	if(bodyLen > m_nMax - m_nBegin - m_nLen)
@@ -57,14 +57,14 @@ bool NetIOBuffer::Write(char* recvBuf, uint32 bodyLen)
 }
 
 
-void NetIOBuffer::Read(void** pMsg, uint32 nLen)
+void NetIOBuffer::Read(void** pMsg, int32 nLen)
 {
 	if(nLen > m_nLen) return;
 
 	*pMsg = m_pBuffer + m_nBegin;
 }
 
-uint32 NetIOBuffer::ReadRemove(void* pMsg,uint32 nLen)
+int32 NetIOBuffer::ReadRemove(void* pMsg, int32 nLen)
 {
 	if(!m_nLen)	return m_nLen;
 
@@ -87,7 +87,7 @@ uint32 NetIOBuffer::ReadRemove(void* pMsg,uint32 nLen)
 }
 
 
-void NetIOBuffer::RemoveBuffer(uint32 nLen)
+void NetIOBuffer::RemoveBuffer(int32 nLen)
 {
 	mutex::scoped_lock lock(m_cMutex);
 	m_nBegin += nLen;
@@ -97,11 +97,11 @@ void NetIOBuffer::RemoveBuffer(uint32 nLen)
 	lock.unlock();
 }
 
-uint32 NetIOBuffer::GetLen()
+int32 NetIOBuffer::GetLen()
 {
 	return m_nLen;
 }
-uint32 NetIOBuffer::GetSpace()
+int32 NetIOBuffer::GetSpace()
 {
 	return m_nMax - m_nBegin - m_nLen;
 }

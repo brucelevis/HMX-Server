@@ -133,17 +133,17 @@ public:
 	 *  Created by hzd 2015/01/21  
 	 *
 	 */
-	virtual void SendMsg( NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
+	virtual void SendMsg( NetMsgHead* pMsg,int32 nSize);
 
-	void SendMsgToWs( NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
+	void SendMsgToWs( NetMsgHead* pMsg,int32 nSize);
 
-	void SendMsgToSs( NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
+	void SendMsgToSs( NetMsgHead* pMsg,int32 nSize);
 
-	void SendMsgToLs( NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
+	void SendMsgToLs( NetMsgHead* pMsg,int32 nSize);
 
-	void SendMsgToDp( NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
+	void SendMsgToDp( NetMsgHead* pMsg,int32 nSize);
 
-	void SendMsgToFep( NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
+	void SendMsgToFep( NetMsgHead* pMsg,int32 nSize);
 
 	/*
 	 *	惹要断开该连接，则调用该接口 
@@ -234,7 +234,7 @@ public:
 
 protected:
 
-	void SendMsg(NetSocket* pSocket,NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
+	void SendMsg(NetSocket* pSocket,NetMsgHead* pMsg,int32 nSize);
 
 private:
 
@@ -307,7 +307,7 @@ public:
 	 *  Created by hzd 2015/01/26  
 	 *
 	 */
-	void SendToAll( NetMsgHead* pMsg,int32 nSize,EServerType eToServerType,SocketCallbackBase* pCallback = NULL);
+	void SendToAll( NetMsgHead* pMsg,int32 nSize,EServerType eToServerType);
 
 	/*
 	 *
@@ -325,7 +325,7 @@ public:
 	 * Copyright (c) Created by hzd 2015-4-28.All rights reserved
 	 *
 	 */
-	void SendMsgToLs(NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
+	void SendMsgToLs(NetMsgHead* pMsg,int32 nSize);
 
 	/*
 	 *
@@ -334,7 +334,7 @@ public:
 	 * Copyright (c) Created by hzd 2015-4-28.All rights reserved
 	 *
 	 */
-	void SendMsgToWs(NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
+	void SendMsgToWs(NetMsgHead* pMsg,int32 nSize);
 
 	/*
 	 *
@@ -343,7 +343,7 @@ public:
 	 * Copyright (c) Created by hzd 2015-4-28.All rights reserved
 	 *
 	 */
-	void SendMsgToSs(NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
+	void SendMsgToSs(NetMsgHead* pMsg,int32 nSize);
 
 	/*
 	 *

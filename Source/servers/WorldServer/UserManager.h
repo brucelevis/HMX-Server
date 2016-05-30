@@ -37,7 +37,7 @@ public:
 
 	int32 GetCurSceneID();
 
-	void SendToFep(NetMsgHead* pMsg,int32 nSize, SocketCallbackBase* pCallback = NULL);
+	void SendToFep(NetMsgHead* pMsg,int32 nSize);
 
 private:
 

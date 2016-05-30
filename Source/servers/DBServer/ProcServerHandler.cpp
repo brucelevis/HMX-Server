@@ -63,7 +63,7 @@ void ProcServerHandler::ReqAccountLogin(BaseSession* pBaseSession, const NetMsgH
 
 	const L2DAccountLogin* pPacket = static_cast<const L2DAccountLogin*>(pMsg);
 
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nSessionID);
 	ASSERT(pClientSession);
 
 	IDbBase* pDB = DbConnManager::Instance()->GetMainDB();
@@ -115,7 +115,7 @@ void ProcServerHandler::ReqRoleCreate(BaseSession* pBaseSession, const NetMsgHea
 {
 
 	const L2DRoleCreate* rev = static_cast<const L2DRoleCreate*>(pMsg);
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(rev->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(rev->nSessionID);
 	ASSERT(pClientSession);
 
 	IDbBase* pDB = DbConnManager::Instance()->GetMainDB();
@@ -169,7 +169,7 @@ void ProcServerHandler::ReqLoadCharacter(BaseSession* pBaseSession, const NetMsg
 	sMsg.sUserData.LoadQuestData(pUserMem->sQuestTable);
 
 	// 这种方式发送更直接，如果传过来又需要回去的，这更直接 
-	sMsg.nClientSessionID = packet->nClientSessionID;
+	sMsg.nSessionID = packet->nSessionID;
 	pBaseSession->SendMsg(&sMsg,sMsg.GetPackLength());
 
 	// 不太允许采用下面这种方式，很大可能会出错，比如加载数据不是自己，而是别人的，则就会发到别人的场景中去 

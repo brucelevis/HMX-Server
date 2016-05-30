@@ -217,7 +217,7 @@ void ForServerMsgHandler::ReqRoadLest(BaseSession* pSession, const NetMsgHead* p
 {
 	//---------------------------------服务组代码begin-------------------------------
 	const SSReqLoadLest* pPacket = static_cast<const SSReqLoadLest*>(pMsg);
-	int32 nClientSessionID = pPacket->nClientSessionID;
+	int32 nClientSessionID = pPacket->nSessionID;
 	ServerSession* pFepSession = static_cast<ServerSession*>(pSession);
 
 	// 找出分配最小的(或上一次分配的，以后再优化) 
@@ -234,7 +234,7 @@ void ForServerMsgHandler::ReqRoadLest(BaseSession* pSession, const NetMsgHead* p
 
 	// 同步到ls,dp,fep 
 	SSSessionNofitySInfo sNofityInfo;
-	sNofityInfo.nClientSessionID = nClientSessionID;
+	sNofityInfo.nSessionID = nClientSessionID;
 	sNofityInfo.nLsServerID = pLsSession->ServerID();
 	sNofityInfo.nDpServerID = pDpSession->ServerID();
 	sNofityInfo.nFepServerID = pFepSession->ServerID();
@@ -250,7 +250,7 @@ void ForServerMsgHandler::ReqRoadLest(BaseSession* pSession, const NetMsgHead* p
 void ForServerMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
 {
 	const SSNofityClientExit* pPacket = static_cast<const SSNofityClientExit*>(pMsg);
-	int32 nClientSessionID = pPacket->nClientSessionID;
+	int32 nClientSessionID = pPacket->nSessionID;
 	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(nClientSessionID);
 	if(!pClientSession)
 	{
@@ -278,7 +278,7 @@ void ForServerMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgHe
 		sMsgExit.nPostion = SSNofityClientExit::E_STATE_IN_UNKOWN;	
 		break;
 	}
-	sMsgExit.nClientSessionID = nClientSessionID;
+	sMsgExit.nSessionID = nClientSessionID;
 	pClientSession->SendMsgToLs(&sMsgExit,sMsgExit.GetPackLength());
 	if( nStatus == E_CLIENT_STATUS_IN_SCENE)
 	{
@@ -313,6 +313,39 @@ void ForServerMsgHandler::NotifyConnectInfo(BaseSession* pSession, const NetMsgH
 	const SSNotifyConnectInfo* pInfo = static_cast<const SSNotifyConnectInfo*>(pMsg);
 	ServerSession* pServerSession = static_cast<ServerSession*>(pSession);
 	ServerInfoMgr::Instance()->UpdateServerInfo(pServerSession->ServerID(),pInfo->nServerLoad,pInfo->nClientLoad);
+}
+
+void ForServerMsgHandler::OnEventRemotePreOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+	printf("[INFO]:OnEventRemotePreOnlyMsg\n");
+}
+
+void ForServerMsgHandler::OnEventRemoteAfterOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+	printf("[INFO]:OnEventRemoteAfterOnlyMsg\n");
+
+	if (stEvent.first == EVENT_REMOTE_SEND_AFTER_ONLY_MSE)
+	{
+		int32 nCsessionID = stEvent.fourth;
+		int64 repeatLoginID = stEvent.fifth;
+		if (!nCsessionID || !repeatLoginID)
+		{
+			ASSERT(0);
+			return;
+		}
+
+		ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(nCsessionID);
+		if (pClientSession == NULL)
+		{
+			ASSERT(pClientSession);
+			return;
+		}
+
+		W2DSelectRole sMsg;
+		sMsg.nCharID = repeatLoginID;
+		pClientSession->SendMsgToDp(&sMsg, sMsg.GetPackLength());
+	}
+
 }
 
 

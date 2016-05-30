@@ -67,7 +67,7 @@ void ProcClientHandler::ReqSelectRole(BaseSession* pSession, const NetMsgHead* p
 	// 检查状态等
 	const C2WSelectRole* pPacket = static_cast<const C2WSelectRole*>(pMsg);
 	
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nClientSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nSessionID);
 	ASSERT(pClientSession);
 
 	if(pPacket->nCharID < 1)
