@@ -6,15 +6,13 @@
 
 SceneUser::SceneUser(int64 nUserID,ClientSession* pClientSession)
 	:Creature(ENTITY_TYPE_PLAYER, 0,true,E_CHANNEL_REGIST_TYPE_POS_B | E_CHANNEL_REGIST_TYPE_CREATURE_B | E_CHANNEL_REGIST_TYPE_SPELL_B | E_CHANNEL_REGIST_TYPE_BUFF_B)
-	,m_pClientSession(pClientSession)
+	,m_pCSession(pClientSession)
 	,m_cUserCtrl(this),m_cQuestCtrl(this)
 {
 	ASSERT(nUserID);
 	ASSERT(pClientSession);
 
 	m_bClientReady = 0;
-	m_pChangeSceneCallBack = NULL;
-
 	SceneUserInitAttributeOffet();
 };
 
@@ -200,20 +198,11 @@ void SceneUser::LoadAllData(const StUserDataForSs& rData)
 }
 
 // 保存数据 
-bool SceneUser::SaveData(StUserSaveCallBack* pSaveCallBack)
+bool SceneUser::SaveData()
 {
-	int32 nReceiptID = 0;
-	if (pSaveCallBack)
-	{
-		m_vecSaveCallBack.push_back(pSaveCallBack);
-		nReceiptID = pSaveCallBack->GetReceiptID();
-		FLOG_INFO("SAVE CALLBACK NUM:%d",m_vecSaveCallBack.size());
-	}	
 
 	S2DSaveUserAllData sUserAllData;
-
 	sUserAllData.nCharID = GetUid();
-	sUserAllData.nReceiptID = nReceiptID;
 
 	// 立刻保存到dp
 
@@ -240,36 +229,14 @@ bool SceneUser::SaveData(StUserSaveCallBack* pSaveCallBack)
 	// quest数据
 	StQuestDataTable& rQuestData = sUserAllData.sUserData.sQuestTable;
 
-
 	// 保存数据,保存成功后会回调 CallBackOfSave 方法 
+	sUserAllData.stEvent = make_streble(EVENT_REMOTE_REVC_AFTER_MSG, 0, GetCSID(), 0, 0);
 	SendToDp(&sUserAllData, sUserAllData.GetPackLength());
 	
 	return true;
 	
 }
 
-// 保存后的dp回调
-void SceneUser::CallBackOfSave(int32 nReceiptID)
-{
-
-	// 比较回执编号是否一致 
-	if (nReceiptID < 1 || m_vecSaveCallBack.size() < 1)
-		return;
-
-	std::vector<StUserSaveCallBack*>::iterator it = m_vecSaveCallBack.begin();
-	for (; it < m_vecSaveCallBack.end();++it )
-	{
-		StUserSaveCallBack* pcb = *it;
-		if(pcb->GetReceiptID() == nReceiptID )
-		{ 
-			pcb->SaveCallBack();
-			m_vecSaveCallBack.erase(it);
-			S_SAFE_DELETE(pcb);
-			break;
-		}
-	}
-	
-}
 
 
 void SceneUser::SaveTransferMapData(uint32 nMapID,int32 nPosX,int32 nPosZ,bool bIsInstance,bool bIsSameSs)
@@ -390,25 +357,25 @@ void SceneUser::SendToClient(NetMsgHead* pMsg, int32 nSize)
 
 void SceneUser::SendToFep(NetMsgHead* pMsg, int32 nSize)
 {
-	if (m_pClientSession)
+	if (m_pCSession)
 	{
-		m_pClientSession->SendMsgToFep(pMsg, nSize);
+		m_pCSession->SendMsgToFep(pMsg, nSize);
 	}
 }
 
 void SceneUser::SendToDp(NetMsgHead* pMsg, int32 nSize)
 {
-	if (m_pClientSession)
+	if (m_pCSession)
 	{
-		m_pClientSession->SendMsgToDp(pMsg, nSize);
+		m_pCSession->SendMsgToDp(pMsg, nSize);
 	}
 }
 
 void SceneUser::SendToWs(NetMsgHead* pMsg, int32 nSize)
 {
-	if (m_pClientSession)
+	if (m_pCSession)
 	{
-		m_pClientSession->SendMsgToWs(pMsg, nSize);
+		m_pCSession->SendMsgToWs(pMsg, nSize);
 	}
 }
 

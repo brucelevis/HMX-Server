@@ -165,3 +165,29 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgH
 	//---------------------------------服务组代码end---------------------------------
 }
 
+void ForSClientMsgHandler::OnEventRemoteClose(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+
+void ForSClientMsgHandler::OnEventRemotePreMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForSClientMsgHandler::OnEventRemoteAfterMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForSClientMsgHandler::OnEventRemotePreOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForSClientMsgHandler::OnEventRemoteAfterOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+

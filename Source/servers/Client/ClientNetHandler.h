@@ -33,6 +33,7 @@ public:
 	static void SendSelectRole(ClientPlayer* gPlayer);
 
 	static void SendEnterChangeScene(ClientPlayer* gPlayer);
+	static void SendEnterChangeScene2(ClientPlayer* gPlayer);
 
 	//C2WSwitchScene sMsg;
 	//sMsg.nSceneID = 1;

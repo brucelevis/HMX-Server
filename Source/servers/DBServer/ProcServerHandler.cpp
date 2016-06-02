@@ -204,15 +204,6 @@ void ProcServerHandler::ReqSaveCharacter(BaseSession* pBaseSession, const NetMsg
 
 	MemoryManager::Instance()->Modifyed(packet->nCharID);
 
-	// 返回保存成功 
-	if (packet->nReceiptID > 0)
-	{
-		D2SSaveCallBack sMsgCallBack;
-		sMsgCallBack.nCharID = packet->nCharID;
-		sMsgCallBack.nReceiptID = packet->nReceiptID;
-		pBaseSession->SendMsg(&sMsgCallBack, sMsgCallBack.GetPackLength());
-	}
-
 }
 
 void ProcServerHandler::ReqSaveMixItemNumber(BaseSession* pBaseSession, const NetMsgHead* pMsg,int32 nSize)

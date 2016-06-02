@@ -54,6 +54,8 @@ void TemporaryScene::EnterUser(int32 nCSID,int64 nCharID,int32 nSceneID,int32 nD
 		pTempUser = GetTempUserInfo(nCSID);
 	}
 
+	FLOG_INFO("Enter this scene charid=%lld", nCharID);
+
 	if(!DbLoadData(nCSID,NULL))
 	{
 		RemoveTempUser(nCSID);
@@ -221,7 +223,7 @@ bool TemporaryScene::DbLoadData(int32 nCSID,const void* data)
 				
 				if (pTempUser->bCrossSs) // 跨场景，返回回调 
 				{
-					pCharacter->SaveData(NULL);
+					pCharacter->SaveData();
 					SceneUserManager::Instance()->RemoveUser(pCharacter->GetUid());
 					// 返回通知进入结果 
 					S2WEnterSceneResult sMsg;
@@ -242,7 +244,7 @@ bool TemporaryScene::DbLoadData(int32 nCSID,const void* data)
 			// 设置前端繁忙，所有数据都不能发给前端 
 			pCharacter->SetClientBusy();
 		
-			// 添加到场景管理器中
+			// 添加到场景管理器中 
 			SceneMapManager::Instance()->AddSceneEnity(nSceneID,*pCharacter);
 
 			// 通知WS已经进入到场景中 

@@ -135,11 +135,11 @@ void NetClient::OnUpdateRecived()
 	int32 nMsgResult = m_rGameSocket.ReadMsg(&pMsg, nBodyLen);
 
 	// Pre处理事件
-	std::vector<SocketEvent> vecEvents;
-	m_rGameSocket.GetEvents(vecEvents);
-	if (!vecEvents.empty())
+	std::vector<SocketEvent> vecPreEvents;
+	m_rGameSocket.GetEvents(vecPreEvents);
+	if (!vecPreEvents.empty())
 	{
-		for (std::vector<SocketEvent>::const_iterator it = vecEvents.begin(); it != vecEvents.end(); ++it)
+		for (std::vector<SocketEvent>::const_iterator it = vecPreEvents.begin(); it != vecPreEvents.end(); ++it)
 		{
 			const SocketEvent& stEvent = *it;
 			switch (stEvent.first)
@@ -261,9 +261,11 @@ void NetClient::OnUpdateRecived()
 	}
 
 	// Afer检查定义事件 
-	if (!vecEvents.empty())
+	std::vector<SocketEvent> vecAfterEvents;
+	m_rGameSocket.GetEvents(vecAfterEvents);
+	if (!vecAfterEvents.empty())
 	{
-		for (std::vector<SocketEvent>::const_iterator it = vecEvents.begin(); it != vecEvents.end(); ++it)
+		for (std::vector<SocketEvent>::const_iterator it = vecAfterEvents.begin(); it != vecAfterEvents.end(); ++it)
 		{
 			const SocketEvent& stEvent = *it;
 			switch (stEvent.first)

@@ -120,7 +120,13 @@ bool Init(const std::string& strCfgXml)
 	bResult = ServerConnectMgr::Instance()->ConnectToServer(rWsInfo.nID, rWsInfo.nType, rWsInfo.strHost.c_str(), rWsInfo.nPort,
 		boost::bind(&ForSClientMsgHandler::OnNetMsgEnter, ForSClientMsgHandler::Instance(), _1),
 		boost::bind(&ForSClientMsgHandler::OnNetMsg, ForSClientMsgHandler::Instance(), _1, _2,_3),
-		boost::bind(&ForSClientMsgHandler::OnNetMsgExit, ForSClientMsgHandler::Instance(), _1));
+		boost::bind(&ForSClientMsgHandler::OnNetMsgExit, ForSClientMsgHandler::Instance(), _1),
+		boost::bind(&ForSClientMsgHandler::OnEventRemoteClose, ForSClientMsgHandler::Instance(), _1, _2),
+		boost::bind(&ForSClientMsgHandler::OnEventRemotePreMsg, ForSClientMsgHandler::Instance(), _1, _2),
+		boost::bind(&ForSClientMsgHandler::OnEventRemoteAfterMsg, ForSClientMsgHandler::Instance(), _1, _2),
+		boost::bind(&ForSClientMsgHandler::OnEventRemotePreOnlyMsg, ForSClientMsgHandler::Instance(), _1, _2),
+		boost::bind(&ForSClientMsgHandler::OnEventRemoteAfterOnlyMsg, ForSClientMsgHandler::Instance(), _1, _2)
+		);
 	if(!bResult)
 	{
 		printf("Connect Fail!\n" );

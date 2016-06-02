@@ -51,6 +51,16 @@ public:
 
 	void NofityClientExit(BaseSession* pSessioin, const NetMsgHead* pHead, int32 nSize);
 
+	virtual void OnEventRemoteClose(NetSocket& rSocket, const SocketEvent& stEvent);
+
+	virtual void OnEventRemotePreMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
+	virtual void OnEventRemoteAfterMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
+	virtual void OnEventRemotePreOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
+	virtual void OnEventRemoteAfterOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
 private:
 
 	bool m_bIsWsMsg;

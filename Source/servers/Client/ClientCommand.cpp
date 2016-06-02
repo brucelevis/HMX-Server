@@ -53,7 +53,8 @@ void GameCommand::Init(NetSocket& rSocket,ClientPlayer*	_gPlayer)
 	s_sCommands.push_back( KeyCommand("3"," 请求加载场景数据 ",	ClientNetHandler::SendReqSceneData) );
 	s_sCommands.push_back( KeyCommand("4"," 发送聊天信息 "	,	ClientNetHandler::SendChar2World) );
 	s_sCommands.push_back( KeyCommand("5"," 获得随机昵称 "	,	ClientNetHandler::SendRandName));
-	s_sCommands.push_back( KeyCommand("6", " 发送切换场景 ",	ClientNetHandler::SendEnterChangeScene));
+	s_sCommands.push_back( KeyCommand("6", " 发送进入场景10001 ",	ClientNetHandler::SendEnterChangeScene));
+	s_sCommands.push_back(KeyCommand("7", " 发送进入场景20001 ", ClientNetHandler::SendEnterChangeScene2));
 }
 
 void GameCommand::Command( float32 nDelay )

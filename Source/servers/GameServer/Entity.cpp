@@ -17,7 +17,6 @@ Entity::Entity(EntityType eEntityType,int32 nTypeID,bool bListen, int32 nRegistC
 	m_sChannelPosition.nID = m_nID;
 	m_sChannelPosition.nType = eEntityType;
 	m_sChannelPosition.nTypeID = nTypeID;
-	m_pSceneMap = NULL;
 	EntityInitAttributeOffet();
 }
 
@@ -98,6 +97,7 @@ void Entity::EntityInitAttributeOffet()
 					}
 
 	// 偏移信息 
+	INIT_ATTRIBUTE_OFFSET(ENTITY_ATTRIBUTE_MAPID, m_sAttribute.nMapID, true, NULL);
 	INIT_ATTRIBUTE_OFFSET(ENTITY_ATTRIBUTE_POS_X, m_sAttribute.sPos.nX, true, NULL);
 	INIT_ATTRIBUTE_OFFSET(ENTITY_ATTRIBUTE_POS_Y, m_sAttribute.sPos.nY, true, NULL);
 	INIT_ATTRIBUTE_OFFSET(ENTITY_ATTRIBUTE_INVIEWRANGE, m_sAttribute.nInViewRange, true, boost::bind(&Entity::OnInViewChange, this, _1, _2));

@@ -65,6 +65,9 @@ bool Init()
 		boost::bind(&ForServerMsgHandler::OnNetMsgExit, ForServerMsgHandler::Instance(), _1));
 
 	// 设置事件触发绑定 
+	gNetServer->SetEventRemoteClose(boost::bind(&ForServerMsgHandler::OnEventRemoteClose,ForServerMsgHandler::Instance(),_1,_2));
+	gNetServer->SetEventRemotePreMsg(boost::bind(&ForServerMsgHandler::OnEventRemotePreMsg,ForServerMsgHandler::Instance(),_1,_2));
+	gNetServer->SetEventRemoteAfterMsg(boost::bind(&ForServerMsgHandler::OnEventRemoteAfterMsg,ForServerMsgHandler::Instance(),_1,_2));
 	gNetServer->SetEventRemotePreOnlyMsg(boost::bind(&ForServerMsgHandler::OnEventRemotePreOnlyMsg,ForServerMsgHandler::Instance(),_1, _2));
 	gNetServer->SetEventRemoteAfterOnlyMsg(boost::bind(&ForServerMsgHandler::OnEventRemoteAfterOnlyMsg,ForServerMsgHandler::Instance(),_1, _2));
 

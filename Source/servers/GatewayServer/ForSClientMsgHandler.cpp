@@ -147,3 +147,29 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSessioin, const NetMsg
 	//pServerSession->GetNetSocket()->AddEventRemoteAfterOnlyMsg()
 
 }
+
+void ForSClientMsgHandler::OnEventRemoteClose(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForSClientMsgHandler::OnEventRemotePreMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForSClientMsgHandler::OnEventRemoteAfterMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForSClientMsgHandler::OnEventRemotePreOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForSClientMsgHandler::OnEventRemoteAfterOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+

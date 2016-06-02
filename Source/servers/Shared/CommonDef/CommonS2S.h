@@ -260,13 +260,10 @@ struct S2DClientExitScene : public NetMsgHead
 struct S2DSaveUserAllData : public NetMsgHead
 {
 	int64 nCharID;
-	int32 nReceiptID;
-
 	StUserDataForSs sUserData;
-
 	S2DSaveUserAllData():NetMsgHead(PRO_S2D_SAVE_CHARACTER)
 	{
-		nCharID = nReceiptID = 0;
+		
 	}
 
 	inline int32 GetPackLength()const

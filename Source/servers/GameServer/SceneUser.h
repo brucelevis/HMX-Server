@@ -13,39 +13,6 @@
 #include "SceneUserCtrl.h"
 #include "QuestCtrl.h"
 
-// 保存回调 
-struct StUserSaveCallBack
-{
-public:
-	StUserSaveCallBack()
-	{
-		int32 static nIncReceiptID = 1;
-		nReceiptID = nIncReceiptID++;
-	}
-	
-	virtual void SaveCallBack()
-	{
-	}
-
-	int32 GetReceiptID()
-	{
-		return nReceiptID;
-	}
-
-private:
-
-	int32 nReceiptID;
-
-};
-
-// 切换场景回调 
-struct StChangeSceneCallBack
-{
-
-	virtual void Success() = 0;
-	virtual void Fail(const std::string& msg) = 0;
-};
-
 /*
  *
  *	Detail: 角色类 
@@ -102,10 +69,7 @@ public:
 	DEFINE_FUNCTION_CHANNEL_BROADCAST(ChannelBuff);
 
 	// 保存数据 
-	bool SaveData(StUserSaveCallBack* pSaveCallBack);
-
-	// 保存后的dp回调 
-	void CallBackOfSave(int32 nReceiptID);
+	bool SaveData();
 
 	// 保存切线地图数据 
 	void SaveTransferMapData(uint32 nMapID,int32 nPosX,int32 nPosZ,bool bIsInstance,bool bIsSameSs);
@@ -113,7 +77,12 @@ public:
 	// 消息更新 
 	void Update(int32 nServerTimes);
 
-	ClientSession* GetClientSession(){	return m_pClientSession;}
+	ClientSession* GetClientSession(){	return m_pCSession;}
+
+	int32 GetCSID()
+	{
+		return m_pCSession ? m_pCSession->GetSessionID() : 0;
+	}
 
 
 public:
@@ -199,17 +168,8 @@ public:
 
 private:
 
-	ClientSession*		m_pClientSession;	// 会话   
+	ClientSession*		m_pCSession;		// 会话   
 	bool				m_bClientReady;		// 前端是否准备好(只有准备好才能发送数据) 
-
-		
-
-// 各种回调
-private:
-
-	// 保存回调，允许有多个
-	std::vector<StUserSaveCallBack*>	m_vecSaveCallBack;		// 保存回调
-	StChangeSceneCallBack*				m_pChangeSceneCallBack;	// 切换场景回调 
 
 //----------------------------------控制器管理------------------------------------------
 public:

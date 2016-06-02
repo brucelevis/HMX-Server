@@ -205,15 +205,15 @@ StUserDataForDp* MemoryManager::GetUserDb(int64 nCharID, int32 nSessionID, StCal
 	}
 
 	{
-		if(StUserDataMemory* pUserDataMemory = g_cUserMainDbFactory.CreateObj(nCharID,nSessionID))
+		if(StUserDataMemory* pMem = g_cUserMainDbFactory.CreateObj(nCharID,nSessionID))
 		{
 			int32 nowTime = Utility::NowTime();
-			pUserDataMemory->nInit = 0;
-			pUserDataMemory->nQueryTime = nowTime;
-			pUserDataMemory->nLifeTime = 60; // s
-			pUserDataMemory->nLastAsk = nowTime;
-			pUserDataMemory->pCallBack = pCbHandler;
-			m_mapUserMainMemory.insert(std::make_pair(nCharID,pUserDataMemory));
+			pMem->nInit = 0;
+			pMem->nQueryTime = nowTime;
+			pMem->nLifeTime = 60; // s
+			pMem->nLastAsk = nowTime;
+			pMem->pCallBack = pCbHandler;
+			m_mapUserMainMemory.insert(std::make_pair(nCharID,pMem));
 			m_mapSessionIDUserID.insert(std::make_pair(nSessionID,nCharID));
 			printf("[INFO]:Add Mem ID:%lld\n", nCharID);
 			IDbBase* pDB = DbConnManager::Instance()->GetMainDB();
@@ -243,14 +243,14 @@ StUserDataForDp* MemoryManager::GetUserDb(int64 nCharID, int32 nSessionID, StCal
 							ASSERT(0);
 							return;
 						}
-						StUserDataForDp* sUserData = MemoryManager::Instance()->GetUser(nCharID,true);
-						if (sUserData == NULL)
+						StUserDataForDp* pUserData = MemoryManager::Instance()->GetUser(nCharID,true);
+						if (pUserData == NULL)
 						{
 							FLOG_ERROR(__FUNCTION__, __LINE__, "Not Found User Mem");
 							ASSERT(0);
 							return;
 						}
-						sUserData->LoadCharacterDataForDp(*pCharDb);// 把数据加载到内存 
+						pUserData->LoadCharacterDataForDp(*pCharDb);// 把数据加载到内存 
 					}
 					MyCallBack(int64 _nCharID) :nCharID(_nCharID)
 					{
@@ -369,8 +369,8 @@ void MemoryManager::Modifyed(int64 nCharID)
 //				return;
 //			}
 
-//			StUserDataForDp* sUserData = MemoryManager::Instance()->GetUser(nCharID,true);
-//			if (sUserData == NULL)
+//			StUserDataForDp* pUserData = MemoryManager::Instance()->GetUser(nCharID,true);
+//			if (pUserData == NULL)
 //			{
 //				FLOG_ERROR(__FUNCTION__, __LINE__, "Not Found User Mem");
 //				ASSERT(0);
@@ -378,7 +378,7 @@ void MemoryManager::Modifyed(int64 nCharID)
 //			}
 
 //			// 保存数据到内存 
-//			sUserData->LoadQuestDataForDp(*pQuestDb);
+//			pUserData->LoadQuestDataForDp(*pQuestDb);
 //		}
 
 //		MyCallBack(int64 _nCharID) :nCharID(_nCharID)

@@ -32,6 +32,17 @@ public:
 
 	// 玩家退出场景(下线或切换场景)
 	void ReqClientExitScene(BaseSession* pBaseSession, const NetMsgHead* pMsg,int32 nSize);
+
+	virtual void OnEventRemoteClose(NetSocket& rSocket, const SocketEvent& stEvent);
+
+	virtual void OnEventRemotePreMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
+	virtual void OnEventRemoteAfterMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
+	virtual void OnEventRemotePreOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
+	virtual void OnEventRemoteAfterOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
 };
 
 

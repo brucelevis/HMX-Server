@@ -88,6 +88,8 @@ void ProcSsHandler::RepChangeScene(BaseSession* pSession, const NetMsgHead* pMsg
 {
 	const S2WChangeScene* packet = static_cast<const S2WChangeScene*>(pMsg);
 
+	FLOG_INFO("Request change new scene id:%d",packet->nSceneID);
+
 	WorldUser* pUser = UserManager::Instance()->GetUserByCharID(packet->nCharID);
 	if (pUser == NULL)
 	{

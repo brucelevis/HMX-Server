@@ -10,7 +10,25 @@ ServerConnectMgr::~ServerConnectMgr()
 {
 }
 
-bool ServerConnectMgr::ConnectToServer(int32 nServerID,int32 nServerType,const char arrHost[32],int32 nPort,NetMsgEnter fEnter,NetMsgOn fMsg,NetMsgExit fExit)
+bool ServerConnectMgr::ConnectToServer(int32 nServerID, int32 nServerType, const char arrHost[32], int32 nPort
+	, NetMsgEnter fEnter
+	, NetMsgOn fMsg
+	, NetMsgExit fExit
+	)
+{
+	return ConnectToServer(nServerID, nServerType, arrHost, nPort, fEnter, fMsg, fExit,NULL,NULL,NULL,NULL,NULL);
+}
+
+bool ServerConnectMgr::ConnectToServer(int32 nServerID,int32 nServerType,const char arrHost[32],int32 nPort
+	, NetMsgEnter fEnter
+	, NetMsgOn fMsg
+	, NetMsgExit fExit
+	, PNetEventRemoteClose fRemoteClose
+	, PNetEventRemotePreMsg fRemotePre
+	, PNetEventRemoteAfterMsg fRemoteAfter
+	, PNetEventRemotePreOnlyMsg fRemotePreOnly
+	, PNetEventRemoteAfterOnlyMsg fRemoteAfterOnly
+	)
 {
 	NetClientInfoVecterType::iterator it = m_vecNetClientInfoAll.begin();
 	NetClientInfoVecterType::iterator itEnd = m_vecNetClientInfoAll.end();
@@ -32,6 +50,17 @@ bool ServerConnectMgr::ConnectToServer(int32 nServerID,int32 nServerType,const c
 
 	pNetClient->SetAddress(arrHost, nPort);
 	pNetClient->SetHandler(fEnter, fMsg, fExit);
+
+	if(fRemoteClose) pNetClient->SetEventRemoteClose(fRemoteClose);
+
+	if(fRemotePre) pNetClient->SetEventRemotePreMsg(fRemotePre);
+
+	if(fRemoteAfter) pNetClient->SetEventRemoteAfterMsg(fRemoteAfter);
+
+	if(fRemotePreOnly) pNetClient->SetEventRemotePreOnlyMsg(fRemotePreOnly);
+
+	if(fRemoteAfterOnly) pNetClient->SetEventRemoteAfterOnlyMsg(fRemoteAfterOnly);
+
 	pNetClient->Start();
 
 	printf("[NOTE]:Connect to Server severid:%d nServerType:%d\n", nServerID, nServerType);

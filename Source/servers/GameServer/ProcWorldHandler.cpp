@@ -19,21 +19,15 @@ ProcWorldHandler::~ProcWorldHandler()
 
 void ProcWorldHandler::ReqEnterScene(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
 {
-
 	const W2SReqEnterScene* packet = static_cast<const W2SReqEnterScene*>(pMsg);
-
-
 	bool bCanEnter = TemporaryScene::Instance()->PreEnterUser(packet->nSceneID, packet->nPram0, packet->nPram1, packet->nPram2);
 	if (!bCanEnter) 
 	{
 		// 不可以进入
-
-
+		FLOG_INFO("Cann't enter this scene,because condition is notgought!");
 		return;
 	}
-
 	TemporaryScene::Instance()->EnterUser(packet->nSessionID,packet->nCharacterID,packet->nSceneID,packet->nDpServerID,packet->nFepServerID);
-
 }
 
 void ProcWorldHandler::ReqEnterResult(BaseSession* pSession, const NetMsgHead* pMsg, int32 nSize)

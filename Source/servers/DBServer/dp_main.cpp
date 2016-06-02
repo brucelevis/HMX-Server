@@ -136,7 +136,13 @@ bool Init(const std::string& strCfgXml)
 	bResult = ServerConnectMgr::Instance()->ConnectToServer(rWsInfo.nID, rWsInfo.nType, rWsInfo.strHost.c_str(), rWsInfo.nPort,
 		boost::bind(&ForSClientMsgHandler::OnNetMsgEnter, ForSClientMsgHandler::Instance(), _1),
 		boost::bind(&ForSClientMsgHandler::OnNetMsg, ForSClientMsgHandler::Instance(), _1, _2,_3),
-		boost::bind(&ForSClientMsgHandler::OnNetMsgExit, ForSClientMsgHandler::Instance(), _1));
+		boost::bind(&ForSClientMsgHandler::OnNetMsgExit, ForSClientMsgHandler::Instance(), _1),
+		boost::bind(&ForSClientMsgHandler::OnEventRemoteClose, ForSClientMsgHandler::Instance(), _1, _2),
+		boost::bind(&ForSClientMsgHandler::OnEventRemotePreMsg, ForSClientMsgHandler::Instance(), _1, _2),
+		boost::bind(&ForSClientMsgHandler::OnEventRemoteAfterMsg, ForSClientMsgHandler::Instance(), _1, _2),
+		boost::bind(&ForSClientMsgHandler::OnEventRemotePreOnlyMsg, ForSClientMsgHandler::Instance(), _1, _2),
+		boost::bind(&ForSClientMsgHandler::OnEventRemoteAfterOnlyMsg, ForSClientMsgHandler::Instance(), _1, _2)
+		);
 	if(!bResult)
 	{
 		printf("Connect Fail!\n" );
@@ -159,6 +165,14 @@ bool Init(const std::string& strCfgXml)
 	gNetServerForServer->SetHandler(boost::bind(&ForServerMsgHandler::OnNetMsgEnter, ForServerMsgHandler::Instance(), _1),
 		boost::bind(&ForServerMsgHandler::OnNetMsg, ForServerMsgHandler::Instance(), _1, _2, _3),
 		boost::bind(&ForServerMsgHandler::OnNetMsgExit, ForServerMsgHandler::Instance(), _1));
+
+	// 设置事件触发绑定 
+	gNetServerForServer->SetEventRemoteClose(boost::bind(&ForServerMsgHandler::OnEventRemoteClose, ForServerMsgHandler::Instance(), _1, _2));
+	gNetServerForServer->SetEventRemotePreMsg(boost::bind(&ForServerMsgHandler::OnEventRemotePreMsg, ForServerMsgHandler::Instance(), _1, _2));
+	gNetServerForServer->SetEventRemoteAfterMsg(boost::bind(&ForServerMsgHandler::OnEventRemoteAfterMsg, ForServerMsgHandler::Instance(), _1, _2));
+	gNetServerForServer->SetEventRemotePreOnlyMsg(boost::bind(&ForServerMsgHandler::OnEventRemotePreOnlyMsg, ForServerMsgHandler::Instance(), _1, _2));
+	gNetServerForServer->SetEventRemoteAfterOnlyMsg(boost::bind(&ForServerMsgHandler::OnEventRemoteAfterOnlyMsg, ForServerMsgHandler::Instance(), _1, _2));
+
 	gNetServerForServer->Start();
 
 	// 通用   

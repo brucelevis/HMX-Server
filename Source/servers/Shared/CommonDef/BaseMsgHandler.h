@@ -3,10 +3,9 @@
 
 #include "BaseDefine.h"
 #include "CommonDefine.h"
+#include "NetIncludes.h"
 
 
-class NetSocket;
-struct NetMsgHead;
 class BaseSession;
 
 typedef boost::function<void(BaseSession*, const NetMsgHead*,int32 nSize)> HandlePackType;
@@ -33,6 +32,17 @@ public:
 	virtual void OnNetMsg(NetSocket& rSocket, NetMsgHead* pMsg,int32 nSize) = 0;
 
 	virtual void OnNetMsgExit(NetSocket& rSocket) = 0;
+
+	virtual void OnEventRemoteClose(NetSocket& rSocket, const SocketEvent& stEvent) {}
+
+	virtual void OnEventRemotePreMsg(NetSocket& rSocket, const SocketEvent& stEvent) {}
+
+	virtual void OnEventRemoteAfterMsg(NetSocket& rSocket, const SocketEvent& stEvent) {}
+
+	virtual void OnEventRemotePreOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent) {}
+
+	virtual void OnEventRemoteAfterOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent) {};
+
 
 	const MsgHandlerInfo* GetMsgHandler(uint32 nProtocol)
 	{

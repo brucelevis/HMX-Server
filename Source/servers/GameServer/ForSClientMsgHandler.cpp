@@ -48,7 +48,7 @@ ForSClientMsgHandler::ForSClientMsgHandler()
 	}
 	
 	REGISTER_D2S_MESSAGE(PRO_D2S_LOAD_CHARACTER,D2SLoadCharacter,RevLoadUserData);
-	REGISTER_D2S_MESSAGE(PRO_D2S_SAVE_CALLBACK, D2SSaveCallBack, RtSaveCallBack);
+//	REGISTER_D2S_MESSAGE(PRO_D2S_SAVE_CALLBACK, D2SSaveCallBack, RtSaveCallBack);
 		
 #undef REGISTER_D2S_MESSAGE
 
@@ -177,7 +177,7 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgH
 	SceneUser* pCharacter = SceneUserManager::Instance()->GetUserByCSID(packet->nSessionID);
 	ASSERT(pCharacter);
 
-	pCharacter->SaveData(NULL);
+	pCharacter->SaveData();
 
 	SSNofityClientExit sMsgExit;
 	sMsgExit.nReason = packet->nReason;
@@ -191,3 +191,30 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgH
 	SceneUserManager::Instance()->RemoveUser(pCharacter->GetUid());
 	//---------------------------------服务组代码end---------------------------------
 }
+
+void ForSClientMsgHandler::OnEventRemoteClose(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+
+void ForSClientMsgHandler::OnEventRemotePreMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForSClientMsgHandler::OnEventRemoteAfterMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForSClientMsgHandler::OnEventRemotePreOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForSClientMsgHandler::OnEventRemoteAfterOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+

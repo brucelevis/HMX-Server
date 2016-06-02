@@ -393,6 +393,9 @@ private:
 
 	void RemoveEvents(const SocketEvent& stEvent);
 
+	// 当一个用户退出时，应该将它的所有事件删除，这个由逻辑去控制，不该提供这样的接口 
+	void RemoveEventsBySessionID(int32 nSessionID) {}
+
 private:
 
 	int32				m_nID;				// socketID， 一个进程所的 Socket 唯一ID从0开始 

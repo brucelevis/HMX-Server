@@ -194,11 +194,11 @@ void NetServer::OnUpdateRecived()
 		int nMsgResult = pSocket->ReadMsg(&pMsg, nMsgBodyLen);
 
 		// Pre处理事件
-		std::vector<SocketEvent> vecEvents;
-		pSocket->GetEvents(vecEvents);
-		if (!vecEvents.empty())
+		std::vector<SocketEvent> vecPreEvents;
+		pSocket->GetEvents(vecPreEvents);
+		if (!vecPreEvents.empty())
 		{
-			for (std::vector<SocketEvent >::const_iterator it = vecEvents.begin(); it != vecEvents.end(); ++it)
+			for (std::vector<SocketEvent >::const_iterator it = vecPreEvents.begin(); it != vecPreEvents.end(); ++it)
 			{
 				const SocketEvent& stEvent = *it;
 				switch (stEvent.first)
@@ -324,9 +324,11 @@ void NetServer::OnUpdateRecived()
 		}
 
 		// Afer检查定义事件 
-		if (!vecEvents.empty())
+		std::vector<SocketEvent> vecAfterEvents;
+		pSocket->GetEvents(vecAfterEvents);
+		if (!vecAfterEvents.empty())
 		{
-			for (std::vector<SocketEvent >::const_iterator it = vecEvents.begin(); it != vecEvents.end(); ++it)
+			for (std::vector<SocketEvent >::const_iterator it = vecAfterEvents.begin(); it != vecAfterEvents.end(); ++it)
 			{
 				const SocketEvent& stEvent = *it;
 				switch (stEvent.first)

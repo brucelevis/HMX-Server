@@ -38,14 +38,26 @@ public:
 	// 服务器列表 
 	void RepServerInfoList(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize);
 
-	// 同步client连接的server信息
+	// 同步client连接的server信息 
 	void NofityClientSessionInfo(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize);
 
 	// 收到ping 返回 
 	void RepPingToS(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize);
 
-	// 客户端退出通知
+	// 客户端退出通知 
 	void NofityClientExit(BaseSession* pSession, const NetMsgHead* pMsg, int32 nSize);
+
+	// socket事件 
+	virtual void OnEventRemoteClose(NetSocket& rSocket, const SocketEvent& stEvent);
+
+	virtual void OnEventRemotePreMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
+	virtual void OnEventRemoteAfterMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
+	virtual void OnEventRemotePreOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
+	virtual void OnEventRemoteAfterOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent);
+
 
 private:
 

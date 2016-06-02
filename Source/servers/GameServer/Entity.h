@@ -57,6 +57,11 @@ public:
 		m_sChannelPosition.nHeadingZ = sHeading.nY;
 	}
 
+	int32 GetMapID()
+	{
+		return GetEntityAttributeInt32(ENTITY_ATTRIBUTE_MAPID);
+	}
+
 	const Point2D& GetPosition() const
 	{
 		return m_sAttribute.sPos;
@@ -116,18 +121,11 @@ private:
 	AttributeOffset		m_sAttributeOffset[ENTITY_ATTRIBUTE_MAX];// 
 
 	////////////////////////////////地图方面的信息//////////////////////////////////////////////
-
-public:
-	SceneMap* GetSceneMap() { return m_pSceneMap; }
 	
 
 private:
 
 	friend class SceneMap;
-	void SetSceneMap(SceneMap* pSceneMap) 
-	{
-		m_pSceneMap = pSceneMap;
-	}
 
 	// 进入视野范围修改 
 	void OnInViewChange(const ValueType& vOldValue, const ValueType& vNewValue);
@@ -137,10 +135,7 @@ private:
 
 private:
 
-	SceneMap*				m_pSceneMap;				// 所在的场景地图 
-
 	uint64					m_nID;						// 实体ID	
-	
 	Vector2DEx				m_sHeading;					// 朝向(保证朝向为单位向量) 
 	RectangleRange			m_sInViewRange;				// 进入视野范围 
 	RectangleRange			m_sOutViewRangle;			// 离开视野范围 

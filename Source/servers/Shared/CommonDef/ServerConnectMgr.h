@@ -39,7 +39,23 @@ public:
 	typedef PNetServerExistHandler NetMsgExit;
 
 	// 连接到一个新的服务器  
-	bool ConnectToServer(int32 nServerID,int32 nServerType, const char arrHost[32],int32 nPort,NetMsgEnter fEnter,NetMsgOn fMsg,NetMsgExit fExit);
+	bool ConnectToServer(int32 nServerID, int32 nServerType, const char arrHost[32], int32 nPort
+		, NetMsgEnter fEnter
+		, NetMsgOn fMsg
+		, NetMsgExit fExit
+		);
+
+	// 连接到一个新的服务器  
+	bool ConnectToServer(int32 nServerID,int32 nServerType, const char arrHost[32],int32 nPort
+		, NetMsgEnter fEnter
+		, NetMsgOn fMsg
+		, NetMsgExit fExit
+		, PNetEventRemoteClose
+		, PNetEventRemotePreMsg
+		, PNetEventRemoteAfterMsg
+		, PNetEventRemotePreOnlyMsg
+		, PNetEventRemoteAfterOnlyMsg
+		);
 
 	// 删除一个Server 
 	void RemoveServer(int32 nServerID);

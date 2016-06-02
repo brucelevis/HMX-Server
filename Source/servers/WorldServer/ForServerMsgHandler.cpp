@@ -315,6 +315,23 @@ void ForServerMsgHandler::NotifyConnectInfo(BaseSession* pSession, const NetMsgH
 	ServerInfoMgr::Instance()->UpdateServerInfo(pServerSession->ServerID(),pInfo->nServerLoad,pInfo->nClientLoad);
 }
 
+
+void ForServerMsgHandler::OnEventRemoteClose(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForServerMsgHandler::OnEventRemotePreMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+
+}
+
+void ForServerMsgHandler::OnEventRemoteAfterMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
 void ForServerMsgHandler::OnEventRemotePreOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
 {
 	printf("[INFO]:OnEventRemotePreOnlyMsg\n");

@@ -56,6 +56,8 @@ void WorldUser::EnterScene(int32 nSceneID,int32 nPram0, int32 nPram1, int32 nPra
 	sMsg.nPram2 = nPram2;
 	pSceneSession->SendMsg(&sMsg,sMsg.GetPackLength());
 
+	FLOG_INFO("Send to dist scene of requst enter this %d scene", nSceneID);
+
 }
 
 int32 WorldUser::GetCurSceneID()

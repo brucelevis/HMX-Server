@@ -33,7 +33,7 @@ void SceneMap::AddMapEntity(Entity& rEntity)
 {
 	if(m_setEntities.find(&rEntity) != m_setEntities.end()) return;
 
-	rEntity.SetSceneMap(this);
+	rEntity.SetEntityAttribute(ENTITY_ATTRIBUTE_MAPID,m_nMapId);
 	m_setEntities.insert(&rEntity);
 	m_oRegionManager.AddSceneEntity(rEntity);
 }

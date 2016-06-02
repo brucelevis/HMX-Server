@@ -16,8 +16,6 @@ public:
 
 	void RevLoadUserData(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize);
 
-	void RtSaveCallBack(BaseSession* pSession, const NetMsgHead* pMsg, int32 nSize);
-
 };
 
 

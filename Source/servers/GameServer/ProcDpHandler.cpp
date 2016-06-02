@@ -26,17 +26,4 @@ void ProcDpHandler::RevLoadUserData(BaseSession* pSession, const NetMsgHead* pMs
 
 }
 
-void ProcDpHandler::RtSaveCallBack(BaseSession* pSession, const NetMsgHead* pMsg, int32 nSize)
-{
-	const D2SSaveCallBack* packet = static_cast<const D2SSaveCallBack*>(pMsg);
-	SceneUser* pUser = SceneUserManager::Instance()->GetUserByUID(packet->nCharID);
-	if (NULL == pUser)
-	{
-		ASSERT(pUser);
-		return;
-	}
-
-	pUser->CallBackOfSave(packet->nReceiptID);
-	
-}
 

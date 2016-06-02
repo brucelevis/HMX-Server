@@ -127,3 +127,52 @@ void ForServerMsgHandler::NofityClientSessionInfo(BaseSession* pSession,const Ne
 		pClientSession->SendMsg(&sMsg,sMsg.GetPackLength());
 	}
 }
+
+void ForServerMsgHandler::OnEventRemoteClose(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForServerMsgHandler::OnEventRemotePreMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+
+}
+
+void ForServerMsgHandler::OnEventRemoteAfterMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+
+}
+
+void ForServerMsgHandler::OnEventRemotePreOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+	printf("[INFO]:OnEventRemotePreOnlyMsg\n");
+}
+
+void ForServerMsgHandler::OnEventRemoteAfterOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
+{
+	printf("[INFO]:OnEventRemoteAfterOnlyMsg\n");
+
+	/*if (stEvent.first == EVENT_REMOTE_SEND_AFTER_ONLY_MSE)
+	{
+		int32 nCsessionID = stEvent.fourth;
+		int64 repeatLoginID = stEvent.fifth;
+		if (!nCsessionID || !repeatLoginID)
+		{
+			ASSERT(0);
+			return;
+		}
+
+		ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(nCsessionID);
+		if (pClientSession == NULL)
+		{
+			ASSERT(pClientSession);
+			return;
+		}
+
+		W2DSelectRole sMsg;
+		sMsg.nCharID = repeatLoginID;
+		pClientSession->SendMsgToDp(&sMsg, sMsg.GetPackLength());
+	}*/
+
+}

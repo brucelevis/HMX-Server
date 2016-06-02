@@ -26,6 +26,7 @@ enum EntityType
 enum EntityAttributeType
 {
 	////////////////////////////////////Entry共用属性//////////////////////////////////////
+	ENTITY_ATTRIBUTE_MAPID,
 	ENTITY_ATTRIBUTE_POS_X,
 	ENTITY_ATTRIBUTE_POS_Y,
 	ENTITY_ATTRIBUTE_INVIEWRANGE,
@@ -35,6 +36,7 @@ enum EntityAttributeType
 
 struct EntityAttribute
 {
+	int32 nMapID;					// 地图ID 
 	Point2D sPos;					// 坐标 
 	int32 nInViewRange;				// 进入视野距离 
 	int32 nOutViewRangle;			// 离开视野距离 

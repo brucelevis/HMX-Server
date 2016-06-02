@@ -174,11 +174,16 @@ void ClientNetHandler::SendSelectRole(ClientPlayer* gPlayer)
 
 void ClientNetHandler::SendEnterChangeScene(ClientPlayer* gPlayer)
 {	
-	static int32 nSceneID = 20001;
 	C2SChanageScene sMsg;
-	sMsg.nSceneID = nSceneID;
+	sMsg.nSceneID = 10001;
 	gPlayer->SendMsg(&sMsg,sMsg.GetPackLength());
-	nSceneID = 10001;
+}
+
+void ClientNetHandler::SendEnterChangeScene2(ClientPlayer* gPlayer)
+{
+	C2SChanageScene sMsg;
+	sMsg.nSceneID = 20001;
+	gPlayer->SendMsg(&sMsg, sMsg.GetPackLength());
 }
 
 void ClientNetHandler::SendLoadResed(ClientPlayer* gPlayer)
