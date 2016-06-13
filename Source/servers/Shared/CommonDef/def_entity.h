@@ -163,12 +163,6 @@ enum CharacterType
 	CHARACTER_TYPE_XIAOYAO	= 4,	// 逍遥 
 };
 
-enum CharacterConst
-{
-	MAX_CHARACTER_NAME_LENGTH		= 32,			// 角色名最大长度 
-	MAX_CHARACTER_NUM				= 8,			// 最大角色数量 
-};
-
 #pragma pack(push, 1)
 
 //////////////////////////////////角色////////////////////////////////////////
@@ -186,6 +180,7 @@ struct SceneUserAttribute
 	int32 nRoleType;			// 角色类型 
 	int32 nClothesID;			// 衣物装备ID 
 	int32 nWeaponID;			// 武器装备ID 
+	char  arrName[MAX_NICK_LENGTH]; // 角色名 
 };
 
 enum SceneUserAttributeType

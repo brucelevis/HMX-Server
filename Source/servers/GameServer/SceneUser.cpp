@@ -11,8 +11,8 @@ SceneUser::SceneUser(int64 nUserID,ClientSession* pClientSession)
 {
 	ASSERT(nUserID);
 	ASSERT(pClientSession);
-
-	m_bClientReady = 0;
+	m_nClientStatus = 0;
+	m_nSaveStatue = 0;
 	SceneUserInitAttributeOffet();
 };
 
@@ -105,14 +105,52 @@ int64 SceneUser::GetSceneUserAttributeInt64(SceneUserAttributeType i_eAttributeT
 	return o_vValue.nInt64;
 }
 
-// 初始化角色基本数据 
-void SceneUser::LoadAllData(const StUserDataForSs& rData)
+// 保存数据 
+bool SceneUser::Serialize(int32 nScoketEventCode)
 {
-	// user数据 
-	const StCharacterDataTable& rUserData = rData.sCharacterTable;
+	if (m_nSaveStatue > 0)
+	{
+		printf("[ERROR]:m_nSaveStatue =======1\n");
+		ASSERT(0);
+		return false;
+	}
 
-	// quest数据
-	const StQuestDataTable& rQuestData = rData.sQuestTable;
+	m_nSaveStatue = 1;
+
+	S2DSaveCharacter sMsg;
+
+	::protobuf::Character character;
+	character.set_char_id(GetUid());
+	character.set_name(m_sAttribute.arrName);
+	character.set_level(GetCreatureAttributeInt32(CREATURE_ATTRIBUTE_LEVEL));
+	character.set_red(GetCreatureAttributeInt32(CREATURE_ATTRIBUTE_RED));
+	character.set_blue(GetCreatureAttributeInt32(CREATURE_ATTRIBUTE_BLUE));
+	character.set_type(GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_ROLETYPE));
+	character.set_exp(GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_EXP));
+	character.set_land_mapid(GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_LAND_ID));
+	character.set_land_x(GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_LAND_X));
+	character.set_land_y(GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_LAND_Y));
+	character.set_instance_mapid(GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_INSTANCE_ID));
+	character.set_instance_x(GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_INSTANCE_X));
+	character.set_instance_y(GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_INSTANCE_Y));
+
+	sMsg.nByteSize = character.ByteSize();
+	character.SerializeToArray(sMsg.arrByte, character.ByteSize());
+
+	if (nScoketEventCode)
+	{
+		int32 nSceneID = character.instance_mapid() > 0 ? character.instance_mapid() : character.land_mapid();
+		sMsg.stEvent = make_streble(EVENT_REMOTE_REVC_AFTER_MSG, nScoketEventCode, GetCSID(), nSceneID, GetUid());
+	}
+	
+	SendToDp(&sMsg, sMsg.GetPackLength());
+	return true;
+
+}
+
+// 初始化角色基本数据 
+void SceneUser::UnSerialize(const ::protobuf::Character& character)
+{
 
 /*
 关于修改数据是用SetXXXAttribute还是用m_sAttribute方式，如果数据可以修改且数据变化会影响其他变化，则用SetXXXAttribute方式
@@ -120,9 +158,12 @@ void SceneUser::LoadAllData(const StUserDataForSs& rData)
 如果又要强行修改，又要影响其他，则用SetXXXAttribute，将第三个参数传入true
 */
 
+	int32 nType = character.type();
+	int32 nLevel = character.level();
+
 /////////////////////////////////基础数据，是不需要保存的/////////////////////////////////////////
 	// 加载基础数据 
-	if(const StRoleTypeInitCfg* pRoleInfo = ResourceMgr::Instance()->GetRoleTypeInitInfoRes(rUserData.nType))
+	if(const StRoleTypeInitCfg* pRoleInfo = ResourceMgr::Instance()->GetRoleTypeInitInfoRes(nType))
 	{
 		SetEntityAttribute(ENTITY_ATTRIBUTE_INVIEWRANGE,pRoleInfo->nInViewRange);
 		SetEntityAttribute(ENTITY_ATTRIBUTE_OUTVIEWRANGE,pRoleInfo->nOutViewRange);
@@ -130,7 +171,7 @@ void SceneUser::LoadAllData(const StUserDataForSs& rData)
 		SetCreatureAttribute(CREATURE_ATTRIBUTE_SPEED,pRoleInfo->nSpeed);
 	}
 
-	if(const StCharacterLevelCfg* pBaseInfo = ResourceMgr::Instance()->GetCharacterLevelBase(rUserData.nType,rUserData.nLevel))
+	if(const StCharacterLevelCfg* pBaseInfo = ResourceMgr::Instance()->GetCharacterLevelBase(nType,nLevel))
 	{
 		SetCreatureAttribute(CREATURE_ATTRIBUTE_REDMAX,pBaseInfo->nRedMax);
 		SetCreatureAttribute(CREATURE_ATTRIBUTE_BLUEMAX,pBaseInfo->nBlueMax);
@@ -153,38 +194,52 @@ void SceneUser::LoadAllData(const StUserDataForSs& rData)
 	}
 
 /////////////////////////////////动态数据，需要保存的/////////////////////////////////////////
+	int32 nInstanceMapId = character.instance_mapid();
+	int32 nInstanceX = character.instance_x();
+	int32 nInstanceY = character.instance_y();
+	int32 nLandMapId = character.land_mapid();
+	int32 nLandX = character.land_x();
+	int32 nLandY = character.land_y();
+	int32 nRed = character.red();
+	int32 nBlue = character.blue();
 
 	// 设置Entry属性 坐标
-	if (rUserData.nInstanceMapId > 0)
+	if (nInstanceMapId > 0)
 	{
-		Point2D sPoint(rUserData.nInstanceX, rUserData.nInstanceY);
+		Point2D sPoint(nInstanceX, nInstanceY);
 		SetPosition(sPoint);
 	}
-	else if (rUserData.nLandMapId > 0)
+	else if (nLandMapId > 0)
 	{
-		Point2D sPoint(rUserData.nLandX, rUserData.nLandY);
+		Point2D sPoint(nLandX, nLandY);
 		SetPosition(sPoint);
 	}
 
 	// 设置Creatrue属性 等级，红蓝
 	SetCreatureAttribute(CREATURE_ATTRIBUTE_STATUS, 0); // 该状态需要后面的其他功能计算再覆盖 
-	SetCreatureAttribute(CREATURE_ATTRIBUTE_LEVEL, rUserData.nLevel);
-	SetCreatureAttribute(CREATURE_ATTRIBUTE_RED, rUserData.nRed);
-	SetCreatureAttribute(CREATURE_ATTRIBUTE_BLUE, rUserData.nBlue);
+	SetCreatureAttribute(CREATURE_ATTRIBUTE_LEVEL, nLevel);
+	SetCreatureAttribute(CREATURE_ATTRIBUTE_RED, nRed);
+	SetCreatureAttribute(CREATURE_ATTRIBUTE_BLUE, nBlue);
+
+	int64 nCharID = character.char_id();
 
 	// 设置角色SceneUser属性 
-	m_sAttribute.nUid = rUserData.nCharID;
-	m_sAttribute.nRoleType = rUserData.nType;
+	m_sAttribute.nUid = nCharID;
+	m_sAttribute.nRoleType = nType;
 
-	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_EXP, rUserData.nExp);
-	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_LAND_ID, rUserData.nLandMapId);
-	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_LAND_X, rUserData.nLandX);
-	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_LAND_Y, rUserData.nLandY);
-	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_INSTANCE_ID, rUserData.nInstanceMapId);
-	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_INSTANCE_X, rUserData.nInstanceX);
-	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_INSTANCE_Y, rUserData.nInstanceY);
+	int32 nExp = character.exp();
+
+	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_EXP, nExp);
+	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_LAND_ID, nLandMapId);
+	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_LAND_X, nLandX);
+	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_LAND_Y, nLandY);
+	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_INSTANCE_ID, nInstanceMapId);
+	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_INSTANCE_X, nInstanceX);
+	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_INSTANCE_Y, nInstanceY);
 	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_CLOTHESID, 0);
 	SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_WEAPONID, 0);
+
+	strncpy(m_sAttribute.arrName, character.name().c_str(), MAX_NICK_LENGTH);
 
 	// 加载Buff数据
 	
@@ -196,47 +251,6 @@ void SceneUser::LoadAllData(const StUserDataForSs& rData)
 
 
 }
-
-// 保存数据 
-bool SceneUser::SaveData()
-{
-
-	S2DSaveUserAllData sUserAllData;
-	sUserAllData.nCharID = GetUid();
-
-	// 立刻保存到dp
-
-	// creature
-
-	// user数据 
-	StCharacterDataTable& rCharacterData = sUserAllData.sUserData.sCharacterTable;
-
-	// status 由于其他功能计算获得 from creature
-	rCharacterData.nLevel = GetCreatureAttributeInt32(CREATURE_ATTRIBUTE_LEVEL);
-	rCharacterData.nRed = GetCreatureAttributeInt32(CREATURE_ATTRIBUTE_RED);
-	rCharacterData.nBlue = GetCreatureAttributeInt32(CREATURE_ATTRIBUTE_BLUE);
-
-	// from sceneuser 
-	rCharacterData.nType = GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_ROLETYPE);
-	rCharacterData.nExp = GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_EXP);
-	rCharacterData.nLandMapId = GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_LAND_ID);
-	rCharacterData.nLandX = GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_LAND_X);
-	rCharacterData.nLandY = GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_LAND_Y);
-	rCharacterData.nInstanceMapId = GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_INSTANCE_ID);
-	rCharacterData.nInstanceX = GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_INSTANCE_X);
-	rCharacterData.nInstanceY = GetSceneUserAttributeInt32(SCENEUSER_ATTRIBUTE_INSTANCE_Y);
-
-	// quest数据
-	StQuestDataTable& rQuestData = sUserAllData.sUserData.sQuestTable;
-
-	// 保存数据,保存成功后会回调 CallBackOfSave 方法 
-	sUserAllData.stEvent = make_streble(EVENT_REMOTE_REVC_AFTER_MSG, 0, GetCSID(), 0, 0);
-	SendToDp(&sUserAllData, sUserAllData.GetPackLength());
-	
-	return true;
-	
-}
-
 
 
 void SceneUser::SaveTransferMapData(uint32 nMapID,int32 nPosX,int32 nPosZ,bool bIsInstance,bool bIsSameSs)
@@ -348,9 +362,9 @@ void SceneUser::OnWeaponChange(const ValueType& vOldValue, const ValueType& vNew
 
 void SceneUser::SendToClient(NetMsgHead* pMsg, int32 nSize)
 {
-	if (!IsClientReady())
+	if (GetClientStatus())
 	{
-		FLOG_WARRING(__FUNCTION__,__LINE__,"ClientReady Not Ready");
+		FLOG_WARRING("ClientReady Not Ready");
 	}
 	SendToFep(pMsg, nSize);
 }

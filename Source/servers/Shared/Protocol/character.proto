@@ -1,0 +1,35 @@
+syntax = "proto2";
+
+package protobuf;
+
+message BinaryData{
+
+	optional int32 x_a = 1;
+
+}
+
+// 角色表 
+message Character {
+
+	optional int32 db_id = 1;
+	optional int64 char_id = 2;
+	optional int32 server_id = 3;
+	optional int64 account_id = 4;
+	optional string name = 5;
+	optional int32 type = 6;
+	optional int32 exp = 7;
+	optional int32 level = 8;
+	optional int32 land_mapid = 9;
+	optional int32 land_x = 10;
+	optional int32 land_y = 11;
+	optional int32 instance_mapid = 12;
+	optional int32 instance_x = 13;
+	optional int32 instance_y = 14;
+	optional int32 red = 15;
+	optional int32 blue = 16;
+	optional int32 created_time = 17;
+	optional BinaryData binary_data = 18;
+}
+
+
+

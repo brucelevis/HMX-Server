@@ -16,6 +16,8 @@ include_directories(
 	${CMAKE_SOURCE_DIR}/servers/DyNetSocket
 	${CMAKE_SOURCE_DIR}/servers/DyNetMysql
 	
+	${PROTOBUL_INCLUDE_DIR}
+	
     ${MYSQL_INCLUDE_DIR}
     ${BOOST_INCLUDE_DIR}
 )
@@ -30,6 +32,7 @@ target_link_libraries(DBServer
 	LIBMysql
     ${MYSQL_LIBRARIES}
     ${BOOST_LIBRARIES}
+	${LIB_PROTOBUF_DEBUG}
 )
 
 IF(UNIX)

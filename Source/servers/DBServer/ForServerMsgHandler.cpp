@@ -39,7 +39,7 @@ ForServerMsgHandler::ForServerMsgHandler()
 
 	//----------------for ss----------------------
 	REGISTER_SS_MESSAGE(PRO_S2D_LOAD_CHARACTER,	S2DLoadCharacter,ReqLoadCharacter);
-	REGISTER_SS_MESSAGE(PRO_S2D_SAVE_CHARACTER, S2DSaveUserAllData, ReqSaveCharacter);
+	REGISTER_SS_MESSAGE(PRO_S2D_SAVE_CHARACTER, S2DSaveCharacter, ReqSaveCharacter);
 	REGISTER_SS_MESSAGE(PRO_S2D_SAVE_MIXITEMNUMBER,S2DSaveMixItemNumber,ReqSaveMixItemNumber);
 	
 
@@ -106,12 +106,12 @@ void ForServerMsgHandler::ReqClientExitScene(BaseSession* pBaseSession, const Ne
 	const SSNofityClientExit* packet = static_cast<const SSNofityClientExit*>(pMsg);
 	if(packet->nReason != SSNofityClientExit::E_REASON_SWITCH_SCENE)
 	{
-		int64 nCharID = MemoryManager::Instance()->GetUserIDBySessionID(packet->nSessionID);
-		if (nCharID)
-		{
-			MemoryManager::Instance()->SaveNowByUID(nCharID);
-			MemoryManager::Instance()->RemoveByUID(nCharID);
-		}
+		//int64 nCharID = MemoryManager::Instance()->GetUserIDBySessionID(packet->nSessionID);
+		//if (nCharID)
+		//{
+		//	MemoryManager::Instance()->SaveNowByUID(nCharID);
+		//	MemoryManager::Instance()->RemoveByUID(nCharID);
+		//}
 		ClientSessionMgr::Instance()->RemoveSession(packet->nSessionID);
 	}
 }

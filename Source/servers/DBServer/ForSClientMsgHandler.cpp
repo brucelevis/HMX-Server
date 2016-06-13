@@ -116,13 +116,13 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgH
 		return;
 	}
 
-	int64 nCharID = MemoryManager::Instance()->GetUserIDBySessionID(pPacket->nSessionID);
+	//int64 nCharID = MemoryManager::Instance()->GetUserIDBySessionID(pPacket->nSessionID);
 
-	if (nCharID)
-	{
-		MemoryManager::Instance()->SaveNowByUID(nCharID);
-		MemoryManager::Instance()->RemoveByUID(nCharID);
-	}
+	//if (nCharID)
+	//{
+	//	MemoryManager::Instance()->SaveNowByUID(nCharID);
+	//	MemoryManager::Instance()->RemoveByUID(nCharID);
+	//}
 
 	/*-------------------------------------------------------------------
 	 * @Brief : 玩家退出的消息要么从WS过来，要么从SS中过来，二者其一 

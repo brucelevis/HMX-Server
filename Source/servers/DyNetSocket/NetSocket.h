@@ -293,6 +293,16 @@ public:
 	 *------------------------------------------------------------------*/
 	int32 ErrorCode(std::string& error);
 
+	/*
+		中断读消息，返回为warriting 
+	*/
+	void BreakUpdateIO();
+
+	/*
+		去掉中断
+	*/
+	void UnBreakUpdateIO(); 
+
 	// 自定义事件 
 	void AddEvent(const SocketEvent& nEvent);
 
@@ -457,6 +467,8 @@ private:
 	* @Author:hzd 2013:11:19
 	*------------------------------------------------------------------*/
 	std::vector< SocketEvent >	m_vecEvents;	// 普通事件 
+
+	bool m_bBreakUpdateIo; // 中断收的IO，
 
 };
 

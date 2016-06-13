@@ -42,7 +42,7 @@ void ProcClientHandler::ReqSceneData(BaseSession* pSession, const NetMsgHead* pM
 	if(SceneUser* pCharacter = SceneUserManager::Instance()->GetUserByCSID(packet->nSessionID))
 	{
 		// 前端已经准备好了 
-		pCharacter->SetClientHadReady();
+		pCharacter->SetClientStatus(0);
 
 		// 发送主数据 
 		pCharacter->SendMainData();
@@ -85,29 +85,19 @@ void ProcClientHandler::ReqChangeScene(BaseSession* pSession, const NetMsgHead* 
 
 	SceneMap* pEnterScene = SceneMapManager::Instance()->GetSceneMap(nEnterSceneID);
 	if (pEnterScene)
-	{
-		SceneMapManager::Instance()->DelSceneEnity(*pUser);
-		TemporaryScene::Instance()->EnterUserLocal(packet->nSessionID, pUser->GetUid(), nEnterSceneID);
+	{		
 		return;
 	}
 
-	bool bResult = pUser->SaveData();
-	if (!bResult) // 请求保存失败，等待下次请求来完成
-	{
-		return;
-		// TODO 返回告诉前端，请求重试，上次保存进行中，请再次重试 
-	}
+	// 如果副本，则请求ws，检验可进入后，才能保存去跳转
 
-	FLOG_INFO("Had Save Call Back!");
-	FLOG_INFO("Request enter new scene , id=%d", nEnterSceneID);
-	S2WChangeScene sMsgChange;
-	sMsgChange.nCharID = pUser->GetUid();
-	sMsgChange.nSceneID = nEnterSceneID;
-	sMsgChange.nPram0 = 0;
-	sMsgChange.nPram1 = 0;
-	sMsgChange.nPram2 = 0;
+	// 如果是普通场景，则直接设置目的地场景，发送保存，删除本地用户所有信息，回调发送到ws进行跳转 
+	pUser->SetSceneUserAttribute(SCENEUSER_ATTRIBUTE_LAND_ID, nEnterSceneID);
+	
+	// 离开地图(因为已经设置地图ID) 
+	SceneMapManager::Instance()->DelSceneEnity(*pUser);
 
-	pUser->SendToWs(&sMsgChange, sizeof(sMsgChange));
+	pUser->Serialize(SOCKET_EVENT_CODE_SAVE_CHANGE_MAP);
 
 	return;
 

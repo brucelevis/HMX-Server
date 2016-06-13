@@ -218,6 +218,20 @@ enum ERoleType
 };
 
 
+// 进入场景条件参数
+struct stEnterSceneParam
+{
+	int32 nSubIdx; // 动态地图唯一ID 
+	int32 nPram1;
+	int32 nPram2;
+	stEnterSceneParam()
+	{
+		memset(this, 0, sizeof(*this));
+	}
+};
+
+
+
 #pragma pack(pop)
 
 
@@ -229,6 +243,13 @@ enum ERoleType
 #define __INTERAVAL_FOUR_SECOND__	(nSrvTime % 20 == 0)
 #define __INTERAVAL_FIVE_SECOND__	(nSrvTime % 25 == 0)
 #define __INTERAVAL_ONE_MINUTE__	(nSrvTime % 300 == 0)
+
+// 异步事件唯一编号 
+enum SocketEventCode
+{
+	SOCKET_EVENT_CODE_SAVE_CHANGE_MAP = 1,
+};
+
 
 #endif
 

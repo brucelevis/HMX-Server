@@ -26,23 +26,32 @@ public:
 
 	~WorldUser();
 
-	int64 GetUserID() { return m_nCharID;}
+	int64 GetUserID() 
+	{ 
+		return m_nCharID;
+	}
 
 	int32 GetSessionID() 
 	{
-		return m_pClientSession ? m_pClientSession->GetSessionID() : 0;
+		return m_pCSession ? m_pCSession->GetSessionID() : 0;
 	}
 
-	void EnterScene(int32 nSceneID,int32 nPram0 = 0,int32 nPram1 = 0,int32 nPram2 = 0);
+	int32 GetCurSceneID()
+	{
+		return m_sData.nLandMapid;
+	}
 
-	int32 GetCurSceneID();
+	void SetCurSceneID(int32 nSceneID)
+	{
+		m_sData.nLandMapid = nSceneID;
+	}
 
 	void SendToFep(NetMsgHead* pMsg,int32 nSize);
 
 private:
 
 	int64				m_nCharID;
-	ClientSession*		m_pClientSession;
+	ClientSession*		m_pCSession;
 	StUserDataForWs		m_sData;
 
 };

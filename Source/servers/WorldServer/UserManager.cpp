@@ -6,7 +6,7 @@
 #include "Utility.h"
 
 
-WorldUser::WorldUser(ClientSession* pClientSession,const StUserDataForWs* fromDpData):m_pClientSession(pClientSession),m_sData(fromDpData)
+WorldUser::WorldUser(ClientSession* pClientSession,const StUserDataForWs* fromDpData):m_pCSession(pClientSession),m_sData(fromDpData)
 {
 	m_nCharID = m_sData.nCharID;
 }
@@ -16,60 +16,11 @@ WorldUser::~WorldUser()
 
 }
 
-void WorldUser::EnterScene(int32 nSceneID,int32 nPram0, int32 nPram1, int32 nPram2)
-{
-
-	// 如何找到最合适的权重 最合适为负载最低 当前负载值 = 本server选择数量 + 本scene中使用数量 
-	SceneInfo* pSceneInfo = SceneInfoManager::Instance()->GetLoadLestServerID(nSceneID);
-	if(pSceneInfo == NULL)
-	{
-		ASSERT(pSceneInfo);
-		return ; // 通知选择错误的场景 
-	}
-
-	// 选择进入该场景 
-	ServerSession* pSceneSession  = ServerSessionMgr::Instance()->GetSession(pSceneInfo->nServerID);
-	if(pSceneSession == NULL)
-	{
-		ASSERT(pSceneSession);
-		return ;
-	}
-
-
-	if (NULL == m_pClientSession)
-	{
-		ASSERT(m_pClientSession);
-		return;
-	}
-
-	m_pClientSession->SetForLocalWs2(pSceneSession,nSceneID);
-
-	// 发送请求进入Scene 
-	W2SReqEnterScene sMsg;
-	sMsg.nSessionID = m_pClientSession->GetSessionID();
-	sMsg.nCharacterID = m_nCharID;
-	sMsg.nSceneID = nSceneID;
-	sMsg.nDpServerID = m_pClientSession->GetDpServerID();
-	sMsg.nFepServerID = m_pClientSession->GetFepServerID();
-	sMsg.nPram0 = nPram0;
-	sMsg.nPram1 = nPram1;
-	sMsg.nPram2 = nPram2;
-	pSceneSession->SendMsg(&sMsg,sMsg.GetPackLength());
-
-	FLOG_INFO("Send to dist scene of requst enter this %d scene", nSceneID);
-
-}
-
-int32 WorldUser::GetCurSceneID()
-{
-	return m_sData.nLandMapid;
-}
-
 void WorldUser::SendToFep(NetMsgHead* pMsg, int32 nSize)
 {
-	if (m_pClientSession)
+	if (m_pCSession)
 	{
-		m_pClientSession->SendMsgToFep(pMsg,nSize);
+		m_pCSession->SendMsgToFep(pMsg,nSize);
 	}
 }
 
@@ -94,7 +45,7 @@ WorldUser* UserManager::AddWorldUser(ClientSession* pClientSession, const StUser
 		UserMapType::iterator it = m_mapUser.find(nCharID);
 		if(it != m_mapUser.end())
 		{
-			FLOG_WARRING(__FUNCTION__,__LINE__,"UserData Had!Why?");
+			FLOG_WARRING("UserData Had!Why?");
 			m_mapUser.erase(it);
 		}
 		AddSessionID(pClientSession->GetSessionID(),nCharID);
@@ -103,7 +54,7 @@ WorldUser* UserManager::AddWorldUser(ClientSession* pClientSession, const StUser
 		return pNewUserData;
 	}else
 	{
-		FLOG_ERROR(__FUNCTION__,__LINE__,"Create UserData Cache Fail!");
+		FLOG_ERROR("Create UserData Cache Fail!");
 		return NULL;
 	}
 }

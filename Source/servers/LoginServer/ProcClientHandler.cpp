@@ -21,16 +21,16 @@ ProcClientHandler::~ProcClientHandler(void)
 void ProcClientHandler::ReqAccountLogin(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
 {
 
-	const C2LAccountLogin* pPacket = static_cast<const C2LAccountLogin*>(pMsg);
+	const C2LAccountLogin* packet = static_cast<const C2LAccountLogin*>(pMsg);
 
 	// 检查字符串是否合法 TODO
 
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(packet->nSessionID);
 	ASSERT(pClientSession);
 
 	L2DAccountLogin sMsg;
-	strcpy(sMsg.arrAccount,pPacket->arrAccount);
-	strcpy(sMsg.arrPassword,pPacket->arrPassword);
+	strncpy(sMsg.arrAccount,packet->arrAccount,sizeof(sMsg.arrAccount));
+	strncpy(sMsg.arrPassword,packet->arrPassword,sizeof(sMsg.arrPassword));
 
 	pClientSession->SendMsgToDp(&sMsg,sMsg.GetPackLength());
 	

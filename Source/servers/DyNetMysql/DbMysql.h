@@ -38,7 +38,13 @@ public:
 	virtual int32 QuerySQL(const char* pszSQL );
 
 	// 导步执行sql推荐 
-	virtual bool ExecAsyncSQL( const char* pszSQL , MyDBCallBack* pCallBack);
+	virtual bool ExecSQLAsync(const char* pszSQL, DBQueryFunc* queryFun = NULL);
+
+	// 导步执行sql select推荐 
+	virtual bool ExecSelectAsync(const char* tableName, const dbCol *column, const char *where = NULL, const char *order = NULL,DBQueryFunc* queryFun = NULL);
+	virtual bool ExecInsertAsync(const char* tableName, const dbCol *column, const char *data, DBQueryFunc* queryFun = NULL);
+	virtual bool ExecDeleteAsync(const char* tableName, const char *where = NULL, DBQueryFunc* queryFun = NULL);
+	virtual bool ExecUpdateAsync(const char* tableName, const dbCol *column, const char *data, DBQueryFunc* queryFun = NULL);
 
 	// 获得结果集 
 	virtual IDbResult* GetAsyncResult();
@@ -49,7 +55,7 @@ public:
 	// 获得结果数 
 	virtual uint32 GetResultSize();
 
-	void wsSQLReplaceStr(char *to,const char *from,unsigned long length);
+	void WsSQLReplaceStr(char *to,const char *from,unsigned long length);
 
 	// 获得数据连接对象 
 	MYSQL* GetDBHandle();
@@ -81,7 +87,10 @@ public:
 	*/
 	bool Rollback();
 
-	std::string CreateSelectSql(const char* tableName,const dbCol *column,const char *where,const char *order,int32 limit = 0,int32 limit_from = 0, bool UseBak = false);
+	/*
+		构建SQL语句 
+	*/
+	virtual std::string CreateSelectSql(const char* tableName,const dbCol *column,const char *where,const char *order,int32 limit = 0,int32 limit_from = 0, bool UseBak = false);
 
 private:
 

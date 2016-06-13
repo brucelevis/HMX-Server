@@ -356,21 +356,21 @@ int32 Encrypt::XorCode(uint32 nRandNum, const char arrKey[MAX_ENCRYPT_LENTH], ch
 		nSrcLen = 0;
 	}	
 	
+	int32 k = 0, i = 0;
 	int32 int_num = nSrcLen - (nSrcLen % sizeof(uint32));
-	int32 k = 0,i = 0; 
-	for (; i < (int32)nSrcLen;)
-	{
-		if(i < int_num)
-		{
-			(*(uint32 *)&pSrc[i]) = (*(uint32 *)&pSrc[i]) ^ ((*(uint32 *)&arrKey[k]) ^ (nRandNum + i));
-			i += sizeof(uint32);
-		}else
-		{
-			(*(char *)&pSrc[i]) = (*(char *)&pSrc[i]) ^ ((*(char *)&arrKey[k]) ^ (nRandNum + i));
-			i += sizeof(char);
-		}
-		k = i % 32;
-	}
+	//for (; i < (int32)nSrcLen;)
+	//{
+	//	if(i < int_num)
+	//	{
+	//		(*(uint32 *)&pSrc[i]) = (*(uint32 *)&pSrc[i]) ^ ((*(uint32 *)&arrKey[k]) ^ (nRandNum + i));
+	//		i += sizeof(uint32);
+	//	}else
+	//	{
+	//		(*(char *)&pSrc[i]) = (*(char *)&pSrc[i]) ^ ((*(char *)&arrKey[k]) ^ (nRandNum + i));
+	//		i += sizeof(char);
+	//	}
+	//	k = i % 32;
+	//}
 	return i;
 }
 

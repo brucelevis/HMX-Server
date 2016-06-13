@@ -25,6 +25,7 @@ NetSocket::NetSocket(io_service& rIo_service,int32 nMaxRecivedSize,int32 nMaxSen
 	, m_nMaxRecivedSize(nMaxRecivedSize)
 	, m_nTimeout(0)
 	, m_errorCode(-1)
+	, m_bBreakUpdateIo(false)
 {
 	static int32 nSocketIncreseID = 1;
 	m_nID = nSocketIncreseID++;
@@ -94,19 +95,23 @@ void NetSocket::HandleClose(const boost::system::error_code& error)
 
 EMsgRead NetSocket::ReadMsg(NetMsgHead** pMsg,int32& nSize)
 {
-
-	if(m_cIBuffer.GetLen() < PACKAGE_HEADER_SIZE) 
+	if (m_bBreakUpdateIo)
+	{
+		printf("[WARRING]:m_bBreakUpdateIo==========true\n");
 		return MSG_READ_WAITTING;
-
+	}
+	if (m_cIBuffer.GetLen() < PACKAGE_HEADER_SIZE)
+	{
+		return MSG_READ_WAITTING;
+	}
 	void* buf = m_cIBuffer.GetStart();
 	memcpy(&nSize,buf,PACKAGE_HEADER_SIZE);
-
-	if(m_cIBuffer.GetLen() < nSize + PACKAGE_HEADER_SIZE) 
+	if (m_cIBuffer.GetLen() < nSize + PACKAGE_HEADER_SIZE)
+	{
 		return MSG_READ_REVCING;
-
+	}
 	*pMsg = (NetMsgHead*)((char*)buf + PACKAGE_HEADER_SIZE);
 	return MSG_READ_OK;
-	
 }
 
 void NetSocket::RemoveMsg(uint32 nLen)
@@ -180,6 +185,9 @@ void NetSocket::Clear()
 	m_eRecvStage = REVC_FSRS_NULL;
 	m_cIBuffer.ClearBuffer();
 	m_cOBuffer.ClearBuffer();
+	m_bBreakUpdateIo = false;
+	m_mapCallback.clear();
+	m_vecEvents.clear();
 }
 
 void NetSocket::ParkMsg(NetMsgHead* pMsg,int32 nLength)
@@ -210,9 +218,6 @@ void NetSocket::ParkMsg(NetMsgHead* pMsg,int32 nLength)
 				}
 			}
 			break;
-			default:
-				printf("[INFO]:Not Found event:%d\n", stEvent.first);
-				break;
 			}
 		}
 	}
@@ -372,6 +377,16 @@ int32 NetSocket::ErrorCode(std::string& error)
 		break;
 	}
 	return m_errorCode;
+}
+
+void NetSocket::BreakUpdateIO()
+{
+	m_bBreakUpdateIo = true;
+}
+
+void NetSocket::UnBreakUpdateIO()
+{
+	m_bBreakUpdateIo = false;
 }
 
 bool NetSocket::GetEvents(std::vector<SocketEvent>& o_vecEvents)

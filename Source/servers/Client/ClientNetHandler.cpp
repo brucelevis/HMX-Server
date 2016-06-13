@@ -182,7 +182,7 @@ void ClientNetHandler::SendEnterChangeScene(ClientPlayer* gPlayer)
 void ClientNetHandler::SendEnterChangeScene2(ClientPlayer* gPlayer)
 {
 	C2SChanageScene sMsg;
-	sMsg.nSceneID = 20001;
+	sMsg.nSceneID = 10004;
 	gPlayer->SendMsg(&sMsg, sMsg.GetPackLength());
 }
 
@@ -246,11 +246,11 @@ void ClientNetHandler::RecvCharacterList(ClientPlayer* gPlayer,NetMsgHead* pHead
 
 void ClientNetHandler::RecvRoleCreateResult(ClientPlayer* gPlayer,NetMsgHead* pHead,int32 nSize)
 {
-	const L2CRoleCreateResult* pPacket = static_cast<const L2CRoleCreateResult*>(pHead);
-	switch(pPacket->nResult)
+	const L2CRoleCreateResult* packet = static_cast<const L2CRoleCreateResult*>(pHead);
+	switch(packet->nResult)
 	{
 	case 0:
-		printf("创建新角色ID:%lld\n",pPacket->nNewCharID);
+		printf("创建新角色ID:%lld\n",packet->nNewCharID);
 		break;
 	case 1:
 		printf("创建失败，数据回退\n");

@@ -72,7 +72,7 @@ void ProcClientHandler::ReqSelectRole(BaseSession* pSession, const NetMsgHead* p
 
 	if(pPacket->nCharID < 1)
 	{
-		FLOG_WARRING(__FUNCDNAME__,__LINE__,"SelectRole ID INVAIL :%d",pPacket->nCharID);
+		FLOG_WARRING("SelectRole ID INVAIL :%d",pPacket->nCharID);
 		return ;
 	}
 

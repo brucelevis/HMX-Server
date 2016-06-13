@@ -69,15 +69,9 @@ struct D2LCharacterList : public NetMsgHead
 		char arrName[MAX_NICK_LENGTH];
 		int32 nType;
 		int32 nLevel;
-		int32 nLandMapid;
-		int32 nLandX;
-		int32 nLandY;
-		int32 nRed;
-		int32 nBlue;
 		StCharacterInfo()
 		{
-			nCharID = nAccountID =  0;
-			nServerID = nType = nLevel = nLandMapid = nLandX = nLandY = nRed = nBlue = 0;
+			nCharID = nAccountID = nServerID = nType = nLevel = 0;
 			memset(arrName,0,sizeof(arrName));
 		}
 	};
@@ -226,12 +220,13 @@ enum EProS2D
 
 struct S2DLoadCharacter : public NetMsgHead
 {
-
-	int64 nCharID;
-
+	int64 nCharacterID;
+	int32 nDpServerID;
+	int32 nFepServerID;
+	int32 nEnterType;
 	S2DLoadCharacter():NetMsgHead(PRO_S2D_LOAD_CHARACTER)
 	{
-		nCharID = 0;
+		nCharacterID = nDpServerID = nFepServerID = nEnterType = 0;
 	}
 
 	inline int32 GetPackLength()const
@@ -257,11 +252,11 @@ struct S2DClientExitScene : public NetMsgHead
 
 };
 
-struct S2DSaveUserAllData : public NetMsgHead
+struct S2DSaveCharacter : public NetMsgHead
 {
-	int64 nCharID;
-	StUserDataForSs sUserData;
-	S2DSaveUserAllData():NetMsgHead(PRO_S2D_SAVE_CHARACTER)
+	int32 nByteSize;
+	char arrByte[4096];
+	S2DSaveCharacter():NetMsgHead(PRO_S2D_SAVE_CHARACTER)
 	{
 		
 	}
@@ -297,12 +292,14 @@ enum EProD2S
 
 struct D2SLoadCharacter : public NetMsgHead
 {
-	
-	StUserDataForSs sUserData;
-
+	int32 nDpServerID;
+	int32 nFepServerID;
+	int32 nEnterType;
+	int32 nByteSize;
+	char arrByte[4096];
 	D2SLoadCharacter():NetMsgHead(PRO_D2S_LOAD_CHARACTER)
 	{
-
+		nDpServerID = nFepServerID = nEnterType = nByteSize = 0;
 	}
 
 	inline int32 GetPackLength()const

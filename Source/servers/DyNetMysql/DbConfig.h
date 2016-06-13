@@ -62,7 +62,7 @@ enum EDbMode
 
 const int32	DB_MAX_SQL = 50000;
 
-#define MAX_SQL_BUFFER 10240
+#define MAX_SQL_BUFFER 1024
 
 
 /*-------------------------------------------------------------------
@@ -150,7 +150,7 @@ enum EResultHandlerType
 };
 
 // 数据库回调 
-struct MyDBCallBack
+struct DBQueryFunc
 {
 	virtual void QueryResult(IDbRecordSet* pSet,int32 nCount)
 	{
@@ -217,7 +217,7 @@ public:
 	virtual void Escape(char* pOutSql,const char* pInSql) = 0;
 	virtual MYSQL_RES* ResultSQL(const char* pszSQL ) = 0;
 	virtual int32 QuerySQL(const char* pszSQL ) = 0;
-	virtual int32 ExecSelect(const char* tableName,const dbCol *column,const char *where,const char *order,IDbRecordSet& o_rRecordSet) = 0;
+	virtual int32 ExecSelect(const char *tableName,const dbCol *column,const char *where,const char *order,IDbRecordSet& o_rRecordSet) = 0;
 	virtual int32 ExecInsert(const char *tableName,const dbCol *column,const char *data) = 0;
 	virtual int32 ExecDelete(const char *tableName,const char *where) =0;
 	virtual int32 ExecUpdate(const char *tableName,const dbCol *column,const char *data,const char *where) =0;
@@ -226,8 +226,15 @@ public:
 	virtual uint32 GetRequestSize() = 0;
 	virtual uint32 GetResultSize() = 0;
 	virtual IDbResult* GetAsyncResult() = 0;
-	virtual bool ExecAsyncSQL(const char* pszSQL, MyDBCallBack* pCallBack ) =0 ;
-			
+	virtual bool ExecSQLAsync(const char* pszSQL, DBQueryFunc* pCallBack ) =0 ;
+	virtual bool ExecSelectAsync(const char* tableName, const dbCol *column, const char *where = NULL, const char *order = NULL, DBQueryFunc* queryFun = NULL) = 0;
+	virtual bool ExecInsertAsync(const char* tableName, const dbCol *column, const char *data, DBQueryFunc* queryFun = NULL) = 0;
+	virtual bool ExecDeleteAsync(const char* tableName, const char *where = NULL, DBQueryFunc* queryFun = NULL) = 0;
+	virtual bool ExecUpdateAsync(const char* tableName, const dbCol *column, const char *data, DBQueryFunc* queryFun = NULL) = 0;
+
+	// 构建SQL语句 
+	virtual std::string CreateSelectSql(const char* tableName, const dbCol *column, const char *where, const char *order, int32 limit = 0, int32 limit_from = 0, bool UseBak = false) = 0;
+
 };
 extern "C" IDbBase*	DatabaseCreate( const char* szDBServer , const char* szLoginName , const char* szPassword , const char* szDBName , bool bEnableSQLChk = true ); 
 

@@ -3,40 +3,50 @@
 #include "SceneInfoManger.h"
 #include "ServerInfoMgr.h"
 
-ObjPool<SceneInfo> SceneInfoManager::m_sSceneInfoFactory;
-SceneInfoManager::SceneInfoManager(void)
+ObjPool<SceneBaseInfo> SceneRegisterManager::m_sSceneInfoFactory;
+
+ObjPool<SceneInfo> SceneManager::m_sSceneInfoFactory;
+
+SceneRegisterManager::SceneRegisterManager(void)
 {
 }
 
 
-SceneInfoManager::~SceneInfoManager(void)
+SceneRegisterManager::~SceneRegisterManager(void)
 {
 }
 
 
 // 注册场景ID  
-void SceneInfoManager::RegisterScene(int32 nServerID,std::vector<int32>& vecSceneID)
+void SceneRegisterManager::RegisterScene(int32 nServerID, int32 nSceneID, int32 nSceneType)
 {
-	for (std::vector<int32>::iterator it = vecSceneID.begin(); it != vecSceneID.end();++it)
+	const SceneBaseInfo* pSceneInfo = GetSceneBaseInfo(nServerID, nSceneID);
+	if (pSceneInfo)
 	{
-		int32 nSceneID = *it;
-		SceneInfo* pSceneInfo = GetSceneInfo(nServerID,nSceneID);
-		if(pSceneInfo)
-		{
-			FLOG_WARRING(__FUNCTION__,__LINE__,"Reapt ServerId:%d,SceneId:%d",nServerID,nSceneID)
-			continue;
-		}
-		pSceneInfo = m_sSceneInfoFactory.CreateObj(nServerID,nSceneID);
-		ASSERT(pSceneInfo);
-		m_umapSceneInfo.insert(std::make_pair(nServerID,pSceneInfo));
+		FLOG_WARRING("Reapt ServerId:%d,SceneId:%d", nServerID, nSceneID);
+		return;
+	}
+
+	FLOG_INFO("Register Scene: scene_id %d,scene_type:%d", nServerID, nSceneID, nSceneType);
+
+	SceneBaseInfo* pNewSceneInfo = m_sSceneInfoFactory.CreateObj();
+	ASSERT(pNewSceneInfo);
+	pNewSceneInfo->nServerID = nServerID;
+	pNewSceneInfo->nSceneID = nSceneID;
+	pNewSceneInfo->nSceneType = nSceneType;
+	m_umapSceneInfo.insert(std::make_pair(nServerID, pNewSceneInfo));
+
+	if (pNewSceneInfo->nSceneType == 1)
+	{
+		SceneManager::Instance()->InitStaticScene(*pNewSceneInfo);
 	}
 }
 
 // 注销某个服务器的所有场景(事件来源，1主动注销，2ss被断开) 
-void SceneInfoManager::RemoveScene(int32 nServerID)
+void SceneRegisterManager::RemoveScene(int32 nServerID)
 {
-	SceneInfoUMapType::iterator itLower = m_umapSceneInfo.lower_bound(nServerID);
-	SceneInfoUMapType::iterator itUpper = m_umapSceneInfo.upper_bound(nServerID);
+	SceneBaseUMapType::iterator itLower = m_umapSceneInfo.lower_bound(nServerID);
+	SceneBaseUMapType::iterator itUpper = m_umapSceneInfo.upper_bound(nServerID);
 
 	vector<int32> vecSceneID;
 
@@ -49,14 +59,14 @@ void SceneInfoManager::RemoveScene(int32 nServerID)
 
 }
 
-void SceneInfoManager::RemoveScene(std::vector<int32>& vecSceneID,int32 nServerID/* = 0*/)
+void SceneRegisterManager::RemoveScene(std::vector<int32>& vecSceneID,int32 nServerID/* = 0*/)
 {
 
 	if(!vecSceneID.size())
 		return;
 
-	SceneInfoUMapType::iterator itBegin;
-	SceneInfoUMapType::iterator itEnd;
+	SceneBaseUMapType::iterator itBegin;
+	SceneBaseUMapType::iterator itEnd;
 	if(nServerID)
 	{
 		itBegin = m_umapSceneInfo.lower_bound(nServerID);
@@ -71,7 +81,7 @@ void SceneInfoManager::RemoveScene(std::vector<int32>& vecSceneID,int32 nServerI
 	vector<int32>::iterator itEndScene = vecSceneID.end();
 	for(; itBegin != itEnd;)
 	{
-		SceneInfo* pSceneInfo = itBegin->second;
+		SceneBaseInfo* pSceneInfo = itBegin->second;
 		int32 nSceneIDTmp = pSceneInfo->nSceneID;
 		if(itEndScene != std::find(itBeginScene,itEndScene,nSceneIDTmp))
 		{
@@ -89,78 +99,147 @@ void SceneInfoManager::RemoveScene(std::vector<int32>& vecSceneID,int32 nServerI
 
 }
 
-SceneInfo* SceneInfoManager::GetLoadLestServerID(int32 nSceneID)
+const SceneBaseInfo* SceneRegisterManager::GetSceneBaseInfo(int32 nServerID, int32 nSceneID)
 {
-
-	SceneInfoUMapType::iterator itBegin = m_umapSceneInfo.begin();
-	SceneInfoUMapType::iterator itEnd = m_umapSceneInfo.end();
-	ServerInfoMgr* gServerInfoMgr =	ServerInfoMgr::Instance();
-
-	int32 nMinRank = 0;
-	SceneInfo* pMinSceneInfo = NULL;
-	for (;itBegin != itEnd;++itBegin)
+	SceneBaseUMapType::const_iterator it;
+	SceneBaseUMapType::const_iterator itEnd;
+	if (nServerID)
 	{
-		int32 nServerID = itBegin->first;
-		if(const ServerInfo* pServerInfo = gServerInfoMgr->GetServerInfo(nServerID))
-		{
-			SceneInfo* pSceneInfoTmp = itBegin->second;
-			int32 nCurrRank = pServerInfo->nServerLoad + pSceneInfoTmp->nLoadNum;
-			if(pSceneInfoTmp->nSceneID != nSceneID)
-			{
-				continue;
-			}
-			if(nMinRank == 0)
-			{
-				nMinRank = nCurrRank;
-				pMinSceneInfo = pSceneInfoTmp;
-				continue;
-			}
-			if(nCurrRank < nMinRank)
-			{
-				nMinRank = nCurrRank;
-				pMinSceneInfo = pSceneInfoTmp;
-			}
-		}else
-		{
-			ASSERT(0);
-		}
+		it = m_umapSceneInfo.lower_bound(nServerID);
+		itEnd = m_umapSceneInfo.upper_bound(nServerID);
 	}
-	return pMinSceneInfo;
-
-}
-
-void SceneInfoManager::UpdateSceneInfo(int32 nServerID,int32 nSceneID,int32 nLoadNum)
-{
-	SceneInfoUMapType::iterator itBegin = m_umapSceneInfo.lower_bound(nServerID);
-	for (;itBegin != m_umapSceneInfo.upper_bound(nServerID); ++itBegin)
+	else
 	{
-		if(itBegin->second->nSceneID == nSceneID)
-		{
-			itBegin->second->nLoadNum = nLoadNum;
-			break;
-		}
+		it = m_umapSceneInfo.begin();
+		itEnd = m_umapSceneInfo.end();
 	}
-}
-
-void SceneInfoManager::GetSceneInfo(SceneInfoVectorType& o_vecSceneInfo)
-{
-	o_vecSceneInfo.clear();
-	SceneInfoUMapType::iterator itBegin = m_umapSceneInfo.begin();
-	for (;itBegin != m_umapSceneInfo.end(); ++itBegin)
-	{
-		o_vecSceneInfo.push_back(*(itBegin->second));
-	}
-}
-
-SceneInfo* SceneInfoManager::GetSceneInfo(int32 nServerID,int32 nSceneID)
-{
-	SceneInfoUMapType::iterator it = m_umapSceneInfo.lower_bound(nServerID);	
-	SceneInfoUMapType::iterator itEnd = m_umapSceneInfo.upper_bound(nServerID);
 	for (; it != itEnd; ++it)
 	{
-		if(it->second->nSceneID == nSceneID)
+		if (it->second->nSceneID == nSceneID)
 			return it->second;
 	}
 	return NULL;
+}
+
+bool SceneRegisterManager::GetSceneBaseInfoByServerID(int32 nServerID, vector<SceneBaseInfo>& o_vecSceneInfo)
+{
+	SceneBaseUMapType::const_iterator it = m_umapSceneInfo.lower_bound(nServerID);
+	SceneBaseUMapType::const_iterator itEnd = m_umapSceneInfo.upper_bound(nServerID);
+	for (; it != itEnd; ++it)
+	{
+		o_vecSceneInfo.push_back(*it->second);
+	}
+	return !o_vecSceneInfo.empty();
+}
+
+bool SceneRegisterManager::GetSceneBaseInfoBySceneID(int32 nSceneID, vector<SceneBaseInfo>& o_vecSceneInfo)
+{
+
+	SceneBaseUMapType::const_iterator it = m_umapSceneInfo.begin();
+	for (; it != m_umapSceneInfo.end(); ++it)
+	{
+		if (it->second->nSceneID == nSceneID)
+		{
+			o_vecSceneInfo.push_back(*it->second);
+		}
+	}
+	return !o_vecSceneInfo.empty();
+}
+
+
+//---------------------------------------------------------------------
+
+void SceneManager::InitStaticScene(const SceneBaseInfo& baseInfo)
+{
+
+	int32 idx = baseInfo.nServerID * 1000 + baseInfo.nSceneID;
+
+	std::map<int32, SceneInfo*>::iterator it = m_mapSceneInfo.find(idx);
+	if (it != m_mapSceneInfo.end())
+	{
+		printf("[ERROR]:repeat server_scene_idx %d\n",idx);
+		ASSERT(0);
+		return;
+	}
+
+	SceneInfo* pSceneInfo = m_sSceneInfoFactory.CreateObj();
+
+	pSceneInfo->idx = idx;
+	pSceneInfo->nServerID = baseInfo.nServerID;
+	pSceneInfo->nSceneID = baseInfo.nSceneID;
+	pSceneInfo->nSceneType = baseInfo.nServerID;
+	pSceneInfo->nCreateTime = Utility::NowTime();
+	pSceneInfo->nDestroyTime = 0;
+
+	m_mapSceneInfo.insert(std::make_pair(idx, pSceneInfo));
+}
+
+void SceneManager::CreateDynamicScene(const SceneBaseInfo& baseInfo)
+{
+
+}
+
+
+void SceneManager::UpdateSceneInfo(int32 idx, int32 nLoadNum)
+{
+
+}
+
+SceneInfo* SceneManager::GetLoadLestServerID(int32 nSceneID)
+{
+	SceneInfoUMapType::iterator it = m_mapSceneInfo.begin();
+	SceneInfoUMapType::iterator itEnd = m_mapSceneInfo.end();
+
+	int32 nMinRank = 0;
+	SceneInfo* pMinSceneInfo = NULL;
+	for (; it != itEnd; ++it)
+	{
+		SceneInfo* pSceneInfo = it->second;
+		if (!pSceneInfo || pSceneInfo->nSceneID != nSceneID)
+			continue;
+		int32 nServerID = it->second->nServerID;
+		const ServerInfo* pServerInfo = ServerInfoMgr::Instance()->GetServerInfo(nServerID);
+		if (pServerInfo == NULL)
+		{
+			ASSERT(0);
+			continue;
+		}
+		int32 nCurrRank = pServerInfo->nServerLoad + pSceneInfo->nLoadNum;
+		if (nMinRank == 0)
+		{
+			nMinRank = nCurrRank;
+			pMinSceneInfo = pSceneInfo;
+			continue;
+		}
+		if (nCurrRank < nMinRank)
+		{
+			nMinRank = nCurrRank;
+			pMinSceneInfo = pSceneInfo;
+		}
+	}
+	return pMinSceneInfo;
+}
+
+SceneInfo* SceneManager::GetSceneInfo(int32 idx)
+{
+	std::map<int32, SceneInfo*>::iterator it = m_mapSceneInfo.find(idx);
+	if (it != m_mapSceneInfo.end())
+	{
+		return it->second;
+	}
+	return NULL;
+}
+
+void SceneManager::GetSceneInfo(std::vector<SceneInfo>& o_vecSceneInfo, int32 nSceneID)
+{
+	std::map<int32, SceneInfo*>::iterator it = m_mapSceneInfo.begin();
+	for (; it != m_mapSceneInfo.end(); ++it)
+	{
+		if (!nSceneID || it->second->nSceneID == nSceneID)
+		{
+			o_vecSceneInfo.push_back(*it->second);
+		}
+	}
+	
 }
 

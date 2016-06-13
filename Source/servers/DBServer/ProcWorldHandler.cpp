@@ -50,7 +50,7 @@ void ProcWorldHandler::ReqNotifyServerInfo(BaseSession* pBaseSession, const NetM
 		const NotifyServerInfo& rInfo = pPacket->arrServerInfo[i];
 		SPRINTF(SQL_BUFFER,"REPLACE INTO `server_info` (`group_idx`,`server_idx`,`server_type`,`server_host`,`server_port`,`server_load`,`client_load`) VALUES (%d,%d,%d,'%s',%d,%d,%d);",pPacket->nGroupID,rInfo.nServerID,rInfo.nServerType,rInfo.arrHost,rInfo.nPort,rInfo.nServerLoad,rInfo.nClientLoad);
 		SQL_BUFFER[ MAX_SQL_BUFFER - 1 ] = '\0';
-		pDB->ExecAsyncSQL(SQL_BUFFER,NULL);
+		pDB->ExecSQLAsync(SQL_BUFFER,NULL);
 	}
 
 }
@@ -65,7 +65,7 @@ void ProcWorldHandler::ReqNotifySceneInfo(BaseSession* pBaseSession, const NetMs
 		memset(SQL_BUFFER,0,MAX_SQL_BUFFER);
 		SPRINTF(SQL_BUFFER,"REPLACE INTO `scene_info` (`server_idx`,`scene_idx`,`scene_load`) VALUES (%d,%d,%d);",rInfo.nServerID,rInfo.nSceneID,rInfo.nLoadNum);
 		SQL_BUFFER[ MAX_SQL_BUFFER - 1 ] = '\0';
-		pDB->ExecAsyncSQL(SQL_BUFFER,NULL);
+		pDB->ExecSQLAsync(SQL_BUFFER,NULL);
 	}
 }
 
@@ -78,15 +78,15 @@ void ProcWorldHandler::ReqQueryEventInfo(BaseSession* pBaseSession, const NetMsg
 void ProcWorldHandler::ReqSelectRole(BaseSession* pBaseSession, const NetMsgHead* pMsg,int32 nSize)
 {
 
-	const W2DSelectRole* pPacket = static_cast<const W2DSelectRole*>(pMsg);
+	const W2DSelectRole* packet = static_cast<const W2DSelectRole*>(pMsg);
 
 	// 检查内存是否存在等 
-	int32 nMyCSID = pPacket->nSessionID;
+	int32 nMyCSID = packet->nSessionID;
 
-	struct MyUserDataCallBack : public StCallBackInfo
+	struct MyUserDataCallBack : public stQueryDB<StCharacterTable>
 	{
 		int32 nCSID;
-		virtual void QueryFinish(StUserDataForDp* pUserData) // 当异步查询数据库完成后会调用该接口，当调用完该对象，会安全地删除该指针  
+		virtual void QueryFinish(StCharacterTable* pUserData) // 当异步查询数据库完成后会调用该接口，当调用完该对象，会安全地删除该指针  
 		{
 			ProcWorldHandler::Instance()->CallBackSelectRole(nCSID, pUserData);
 		}
@@ -99,8 +99,10 @@ void ProcWorldHandler::ReqSelectRole(BaseSession* pBaseSession, const NetMsgHead
 
 	// 这里仅能通过new的方式，因为该内容要保存一段时间 
 	MyUserDataCallBack* pCallBack = new MyUserDataCallBack(nMyCSID);
-
-	StUserDataForDp* pUserMem = MemoryManager::Instance()->GetUserDb(pPacket->nCharID,nMyCSID,pCallBack);
+	memset(SQL_BUFFER, 0, MAX_SQL_BUFFER);
+	SPRINTF(SQL_BUFFER, "`char_id`=%lld;", packet->nCharID);
+	SQL_BUFFER[MAX_SQL_BUFFER - 1] = '\0';
+	StCharacterTable* pUserMem = DatabaseManager::GetCharacterMemory().GetDataDb(packet->nCharID,nMyCSID, "character_info", StCharacterTable::fields, SQL_BUFFER, NULL, pCallBack);
 	if(NULL == pUserMem )
 	{
 		// 找不到内存，查询数据库后会回调 
@@ -114,7 +116,7 @@ void ProcWorldHandler::ReqSelectRole(BaseSession* pBaseSession, const NetMsgHead
 
 }
 
-void ProcWorldHandler::CallBackSelectRole(int32 nCSID, StUserDataForDp* pUserDataMemory)
+void ProcWorldHandler::CallBackSelectRole(int32 nCSID, StCharacterTable* pUserDataMemory)
 {
 	// 有可能是失效的ClientSession，需要做处理
 	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(nCSID);
@@ -126,7 +128,7 @@ void ProcWorldHandler::CallBackSelectRole(int32 nCSID, StUserDataForDp* pUserDat
 	
 	D2WSelectRoleResult sMsg;
 	sMsg.nResult = D2WSelectRoleResult::E_SELECT_SUCCESS;
-	sMsg.sUserData.LoadData(pUserDataMemory->sCharacterTable);
+	sMsg.sUserData.LoadData(*pUserDataMemory);
 	pClientSession->SendMsgToWs(&sMsg, sMsg.GetLength());
 	return;
 }

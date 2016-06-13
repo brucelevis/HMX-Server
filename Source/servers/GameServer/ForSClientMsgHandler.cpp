@@ -9,7 +9,7 @@
 
 #include "SceneUser.h"
 #include "SceneUserManager.h"
-
+#include "ResourceMgr.h"
 
 
 ForSClientMsgHandler::ForSClientMsgHandler()
@@ -36,7 +36,7 @@ ForSClientMsgHandler::ForSClientMsgHandler()
 		RegisterMessage(msg_idx, sizeof(cls), boost::bind(&ProcWorldHandler::handler, ProcWorldHandler::Instance(), _1, _2, _3)); \
 	}
 
-	REGISTER_W2S_MESSAGE(PRO_W2S_ReqEnterScene,W2SReqEnterScene,ReqEnterScene); // 请求进入场景 
+	REGISTER_W2S_MESSAGE(PRO_W2S_ReqTransfer,W2SReqEnterScene,ReqEnterScene); // 请求进入场景 
 	REGISTER_W2S_MESSAGE(PRO_W2S_RepEnterResult,W2SRepEnterResult,ReqEnterResult); // 请求进入场景 
 	
 #undef REGISTER_W2S_MESSAGE
@@ -121,14 +121,19 @@ void ForSClientMsgHandler::RepLogined(BaseSession* pBaseSession, const NetMsgHea
 			}
 
 			ASSERT(rSceneInfoOpt.nSceneNum <= MAX_SCENE_NUM);
-
-			S2WRegisterScene sMsg;
-			sMsg.nSceneNum = rSceneInfoOpt.nSceneNum;
 			for (int32 i = 0; i < rSceneInfoOpt.nSceneNum; ++i)
 			{
-				sMsg.arrSceneID[i] = rSceneInfoOpt.arrSceneID[i];
+				const StMapInfoResCfg* pMapInfoCfg = ResourceMgr::Instance()->GetMapInfoCfg(rSceneInfoOpt.arrSceneID[i]);
+				if (pMapInfoCfg == NULL)
+					continue;
+
+				S2WRegisterScene sMsg;
+				sMsg.nServerID = NetServerOpt::Instance()->GetLocalServerID();
+				sMsg.nSceneID = rSceneInfoOpt.arrSceneID[i];
+				sMsg.nSceneType = pMapInfoCfg->nSceneType;
+				pBaseSession->SendMsg(&sMsg, sMsg.GetPackLength());
 			}
-			pBaseSession->SendMsg(&sMsg,sMsg.GetPackLength());
+			
 		}
 		break;
 	case ESERVER_TYPE_DP:
@@ -174,21 +179,19 @@ void ForSClientMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgH
 	const SSNofityClientExit* packet = static_cast<const SSNofityClientExit*>(pMsg);
 
 	// 同步数据到dp上 
-	SceneUser* pCharacter = SceneUserManager::Instance()->GetUserByCSID(packet->nSessionID);
-	ASSERT(pCharacter);
+	SceneUser* pUser = SceneUserManager::Instance()->GetUserByCSID(packet->nSessionID);
+	ASSERT(pUser);
 
-	pCharacter->SaveData();
+	pUser->Serialize();
+
+	ClientSessionMgr::Instance()->RemoveSession(packet->nSessionID);
+	SceneUserManager::Instance()->RemoveUser(pUser->GetUid());
 
 	SSNofityClientExit sMsgExit;
 	sMsgExit.nReason = packet->nReason;
 	sMsgExit.nPostion = packet->nPostion;
 	
-	pCharacter->GetClientSession()->SendMsgToDp(&sMsgExit,sMsgExit.GetPackLength());
-
-	// 删除 
-	ClientSessionMgr::Instance()->RemoveSession(packet->nSessionID);
-
-	SceneUserManager::Instance()->RemoveUser(pCharacter->GetUid());
+	pUser->GetClientSession()->SendMsgToDp(&sMsgExit,sMsgExit.GetPackLength());
 	//---------------------------------服务组代码end---------------------------------
 }
 
@@ -197,24 +200,46 @@ void ForSClientMsgHandler::OnEventRemoteClose(NetSocket& rSocket, const SocketEv
 
 }
 
-
 void ForSClientMsgHandler::OnEventRemotePreMsg(NetSocket& rSocket, const SocketEvent& stEvent)
 {
-
+	printf("[INFO]:OnEventRemotePreMsg\n");
 }
 
 void ForSClientMsgHandler::OnEventRemoteAfterMsg(NetSocket& rSocket, const SocketEvent& stEvent)
 {
+	printf("[INFO]:OnEventRemoteAfterMsg\n");
+	switch (stEvent.second)
+	{
+	case SOCKET_EVENT_CODE_SAVE_CHANGE_MAP:
+	{
+		int32 nSessionID = stEvent.third;
+		int32 nEnterSceneID = stEvent.fourth;
+		int64 nCharacterID = stEvent.fifth;
+		FLOG_INFO("Had Save Call Back!");
+		FLOG_INFO("Request enter new scene ,char_id=%lld,scene_id=%d",nCharacterID,nEnterSceneID);
 
+		ClientSessionMgr::Instance()->RemoveSession(nSessionID);
+		SceneUserManager::Instance()->RemoveUser(nCharacterID);
+
+		S2WChangeScene sMsgChange;
+		sMsgChange.nSessionID = nSessionID;
+		sMsgChange.nCharacterID = nCharacterID;
+		sMsgChange.nSceneID = nEnterSceneID;
+		ServerSessionMgr::Instance()->GetWsSession()->SendMsg(&sMsgChange, sMsgChange.GetPackLength());
+	}
+	break;
+	default:
+		break;
+	}
 }
 
 void ForSClientMsgHandler::OnEventRemotePreOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
 {
-
+	printf("[INFO]:OnEventRemotePreOnlyMsg\n");
 }
 
 void ForSClientMsgHandler::OnEventRemoteAfterOnlyMsg(NetSocket& rSocket, const SocketEvent& stEvent)
 {
-
+	printf("[INFO]:OnEventRemoteAfterOnlyMsg\n");
 }
 

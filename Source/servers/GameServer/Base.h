@@ -24,13 +24,13 @@ public:
 
 	// 检查是否可以进入该场景 
 	// 预前检查/轻度(玩家内存还未加载)
-	virtual bool CheckEnter(int32 nPram0,int32 nPram1,int32 nPram2) = 0;
+	virtual bool CheckEnter(const stEnterSceneParam& param) = 0;
 
 	// 进入该场景并检查(深度检查，已经加载玩家内存) 
 	virtual bool Enter(SceneUser* pUser) = 0;
 
-	//// 退出场景 
-	//virtual void Exit() = 0;
+	// 退出场景 
+	virtual void Leave(SceneUser* pUser) = 0;
 
 protected:
 

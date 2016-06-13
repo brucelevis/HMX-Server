@@ -20,7 +20,7 @@ public:
 public:
 	bool   			m_bFlag;
 	IDbRecordSet*	m_pRecordSet;
-	MyDBCallBack*	m_pCallResult;
+	DBQueryFunc*	m_pCallResult;
 };
 
 #endif

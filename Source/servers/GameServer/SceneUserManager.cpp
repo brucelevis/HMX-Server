@@ -12,21 +12,30 @@ ObjPool<SceneUser> SceneUserManager::s_cUserFactory;
 
 
 // 添加角色 
-SceneUser* SceneUserManager::AddUser(int32 nCSID,int64 nUserID,ClientSession* pClientSession,const StUserDataForSs* pUserData)
+SceneUser* SceneUserManager::AddUser(ClientSession* pClientSession, const ::protobuf::Character& charactor)
 {
+	if (!pClientSession)
+	{
+		ASSERT(0);
+		return NULL; 
+	}
 
+	int64 nUserID = charactor.char_id();
+	int32 nCSID = pClientSession->GetSessionID();
 	if(GetUserByUID(nUserID) || GetUserByCSID(nCSID))
 	{
 		ASSERT(0);
+		return NULL;
 	}
 
 	SceneUser* pUser = s_cUserFactory.CreateObj(nUserID,pClientSession);
 	if(pUser == NULL)
 	{
+		ASSERT(0);
 		return NULL;
 	}
 
-	pUser->LoadAllData(*pUserData);
+	pUser->UnSerialize(charactor);
 
 	m_setPlayerExs.insert(pUser);
 	m_umapUsers.insert(make_pair(nUserID,pUser));
@@ -34,7 +43,6 @@ SceneUser* SceneUserManager::AddUser(int32 nCSID,int64 nUserID,ClientSession* pC
 	m_umapEntityUser.insert(make_pair(pUser->ID(),pUser));
 
 	return pUser;
-
 }
 
 // 删除角色 

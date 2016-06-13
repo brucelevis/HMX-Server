@@ -21,7 +21,6 @@ enum EProS2W
 
 };
 
-
 struct S2WRegisterScene : public NetMsgHead
 {
 
@@ -29,8 +28,11 @@ struct S2WRegisterScene : public NetMsgHead
 	{
 
 	}
-	int32 nSceneNum;
-	int32 arrSceneID[MAX_SCENE_NUM];
+
+	int32 nServerID;
+	int32 nSceneID;
+	int32 nSceneType; //1普通,2副本
+
 	inline int32 GetPackLength()const
 	{
 		return sizeof(*this);
@@ -56,7 +58,7 @@ struct S2WEnterSceneResult : public NetMsgHead
 {
 
 	int32 nSceneID;
-
+	int32 nEnterType;
 	// 是否为跨服，1是，则需要通知原场景，0否，则需要进入主场景 
 	int32 nCross;	
 	enum 
@@ -69,7 +71,7 @@ struct S2WEnterSceneResult : public NetMsgHead
 
 	S2WEnterSceneResult():NetMsgHead(PRO_S2W_ENTER_SCENE_RESULT)
 	{
-		nSceneID = nCross = nResult = 0;
+		nSceneID = nEnterType = nCross = nResult = 0;
 	}
 	inline int32 GetPackLength()const
 	{
@@ -79,24 +81,18 @@ struct S2WEnterSceneResult : public NetMsgHead
 
 /*
 
-切换场景，由ss向ws请求，用户先会进入到临时场景，
-然后根据提供的基本参数进行轻度检查是否可以进入，
-如果可以进入，则对面场景会加载角色内存所有数据，
-之后再做一次深度检查，如果这次能进入，则真正可以进入
-，失败与成功都会进行回调到原来的场景，失败，则通知前端，
-成功则删除本场景的内存ok
+切换场景，由ss向ws请求
+参考td
 
 */
 struct S2WChangeScene : public NetMsgHead
 {
-	int64 nCharID;
+	int64 nCharacterID;
 	int32 nSceneID;
-	int32 nPram0; // 参数1 
-	int32 nPram1; // 参数2
-	int32 nPram2; // 参数3
+	stEnterSceneParam stParam;
 	S2WChangeScene() :NetMsgHead(PRO_S2W_CHANGE_SCENE)
 	{
-		nCharID = nSceneID = nPram0 = nPram1 = nPram2 = 0;
+		nCharacterID = nSceneID = 0;
 	}
 
 	inline int32 GetPackLength()const

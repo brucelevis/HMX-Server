@@ -44,47 +44,60 @@ bool ResourceMgr::LoadAllResources()
 		bResult = false;
 	}
 
-	// TODO 创建场景地图，初始化各模块准备数据 
-	
-	//m_mapZoneInfo
+	// 创建场景地图，初始化各模块准备数据 
 
-	SceneMapManager& rSceneMapMgr = *SceneMapManager::Instance();
-	MapInfoResMapType::iterator it = m_mapMapInfo.begin();
-	for (; it != m_mapMapInfo.end(); ++it )
+	SceneInfoOpt& sceneInfo = NetServerOpt::Instance()->GetSceneInfo();
+	for (int32 i = 0; i < sceneInfo.nSceneNum; ++i)
 	{
-		StMapInfoResCfg& rMapInfo = it->second;
-		int32 nMapID = rMapInfo.nMapId;	
-		int32 nSceneType = rMapInfo.nSceneType;
-
-		const StMapZoneResCfg* zoneRes = GetMapZoneRes(nMapID);
-		if(zoneRes == NULL)
+		int32 nSceneID = sceneInfo.arrSceneID[i];
+		MapInfoResMapType::iterator it = m_mapMapInfo.find(nSceneID);
+		if (it != m_mapMapInfo.end())
 		{
-			ASSERT(zoneRes);
-			return false;
-		}
+			StMapInfoResCfg& rMapInfo = it->second;
+			int32 nMapID = rMapInfo.nMapId;
+			int32 nSceneType = rMapInfo.nSceneType;
 
-		int32 nXAmount = zoneRes->nXAmount;
-		int32 nZAmount = zoneRes->nYAmount;
-		int32 nXCellLength = zoneRes->nXCellLength;
-		int32 nZCellLength = zoneRes->nYCellLength;
-		/*
+			const StMapZoneResCfg* zoneRes = GetMapZoneRes(nMapID);
+			if (zoneRes == NULL)
+			{
+				printf("[ERROR]Load mapzone fail mapid:%d\n", nMapID);
+				ASSERT(zoneRes);
+				return false;
+			}
+
+			int32 nXAmount = zoneRes->nXAmount;
+			int32 nZAmount = zoneRes->nYAmount;
+			int32 nXCellLength = zoneRes->nXCellLength;
+			int32 nZCellLength = zoneRes->nYCellLength;
+			/*
 			Y
 			|
-			|
-			--------->X
-		*/
-		Point2D sTopLeftCoordinate(0, nZAmount * nZCellLength);
-		rSceneMapMgr.AddSceneMap(nMapID,nSceneType,sTopLeftCoordinate,nXAmount,nZAmount,nXCellLength,nZCellLength,zoneRes->regionValue);
+			 -->X
+			*/
+			Point2D sTopLeftCoordinate(0, nZAmount * nZCellLength);
+			SceneMapManager::Instance()->AddSceneMap(nMapID, nSceneType, sTopLeftCoordinate, nXAmount, nZAmount, nXCellLength, nZCellLength, zoneRes->regionValue);
+		}
 	}
+	
 	return bResult;
+}
+
+const StMapInfoResCfg* ResourceMgr::GetMapInfoCfg(int32 nMapID)
+{
+	MapInfoResMapType::const_iterator it = m_mapMapInfo.find(nMapID);
+	if (it != m_mapMapInfo.end())
+	{
+		return &it->second;
+	}
+	return NULL;
 }
 
 const StMapZoneResCfg* ResourceMgr::GetMapZoneRes(int32 nMapID)
 {
-	MapZoneResMapType::iterator it = m_mapZoneInfo.find(nMapID);
+	MapZoneResMapType::const_iterator it = m_mapZoneInfo.find(nMapID);
 	if( it != m_mapZoneInfo.end())
 	{
-		return &(it->second);
+		return &it->second;
 	}
 	return NULL;
 }

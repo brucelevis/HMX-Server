@@ -119,7 +119,7 @@ void ForServerMsgHandler::OnNetMsg(NetSocket& rSocket, NetMsgHead* pMsg,int32 nS
 	if(pMsgHandlerInfo == NULL)
 	{
 		printf("Not found protocol:%d\n",pMsg->nType);
-		FLOG_ERROR(__FUNCTION__ , __LINE__ ,"Not found this protocol:%d",pMsg->nType);
+		FLOG_ERROR("Not found this protocol:%d",pMsg->nType);
 		rSocket.OnEventColse();
 		return;
 	}
@@ -141,7 +141,7 @@ void ForServerMsgHandler::OnNetMsgExit(NetSocket& rSocket)
 	// 注销场景信息 
 	if(eServerType == ESERVER_TYPE_SS)
 	{
-		SceneInfoManager::Instance()->RemoveScene(nServerID);
+		SceneRegisterManager::Instance()->RemoveScene(nServerID);
 	}
 
 }
@@ -168,7 +168,7 @@ void ForServerMsgHandler::ReqLogin(BaseSession* pSession, const NetMsgHead* pMsg
 	if(!bResult)
 	{
 		printf("[ERROR]:OnServerLogin fail serverid:%d\n",nServerID);
-		FLOG_ERROR(__FUNCTION__,__LINE__,"OnServerLogin fail serverid:%d",nServerID);
+		FLOG_ERROR("OnServerLogin fail serverid:%d",nServerID);
 		pServerSession->Exist();
 		return;
 	}
@@ -178,7 +178,7 @@ void ForServerMsgHandler::ReqLogin(BaseSession* pSession, const NetMsgHead* pMsg
 	if(!bResult)
 	{
 		printf("[ERROR]:InitSession fail serverid:%d\n",nServerID);
-		FLOG_ERROR(__FUNCTION__,__LINE__,"InitSession fail serverid:%d",nServerID);
+		FLOG_ERROR("InitSession fail serverid:%d",nServerID);
 		pServerSession->Exist();
 		return;
 	}
@@ -303,7 +303,7 @@ void ForServerMsgHandler::NofityClientExit(BaseSession* pSession, const NetMsgHe
 	}
 	else
 	{
-		FLOG_ERROR(__FUNCTION__,__LINE__,"Not Found UserID by sessionID:%d",nClientSessionID);
+		FLOG_ERROR("Not Found UserID by sessionID:%d",nClientSessionID);
 	}
 	ClientSessionMgr::Instance()->RemoveSession(nClientSessionID);
 }

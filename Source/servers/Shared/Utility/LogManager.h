@@ -83,11 +83,11 @@ public:
 
 	void Info(const char* str , ...);
 
-	void Warring(const char* functionname,int32 rownum,const char* str , ...);
+	void Warring(const char* str , ...);
 
-	void Error(const char* functionname,int32 rownum,const char* str , ...);
+	void Error(const char* str , ...);
 
-	void SaveToDb(ELogLevel eLevel,const char* functionname,const char* detail,int32 rownum);
+	void SaveToDb(ELogLevel eLevel,const char* detail);
 
 private:
 
@@ -115,13 +115,13 @@ private:
 #ifdef WIN32
 #define FLOG_NORMAL( fmt , ... ) LogManagerMgr::Instance()->Normal( fmt , __VA_ARGS__ );
 #define FLOG_INFO( fmt , ... ) LogManagerMgr::Instance()->Info(fmt , __VA_ARGS__ );
-#define FLOG_WARRING(functionname,rownum,fmt , ... ) LogManagerMgr::Instance()->Warring( functionname,rownum, fmt , __VA_ARGS__ );
-#define FLOG_ERROR( functionname,rownum,fmt , ... ) LogManagerMgr::Instance()->Error(functionname ,rownum, fmt , __VA_ARGS__ );
+#define FLOG_WARRING(fmt , ... ) LogManagerMgr::Instance()->Warring(fmt , __VA_ARGS__ );
+#define FLOG_ERROR(fmt , ... ) LogManagerMgr::Instance()->Error(fmt , __VA_ARGS__ );
 #else
 #define FLOG_NORMAL( fmt , a... ) LogManagerMgr::Instance()->Normal( fmt , ##a );
 #define FLOG_INFO( fmt , a... ) LogManagerMgr::Instance()->Info( fmt , ##a );
-#define FLOG_WARRING(functionname,rownum, fmt , a... ) LogManagerMgr::Instance()->Warring( functionname,rownum, fmt , ##a );
-#define FLOG_ERROR( functionname,rownum,fmt , a... ) LogManagerMgr::Instance()->Error(functionname,rownum, fmt , ##a );
+#define FLOG_WARRING(fmt , a... ) LogManagerMgr::Instance()->Warring(fmt , ##a );
+#define FLOG_ERROR(fmt , a... ) LogManagerMgr::Instance()->Error(fmt , ##a );
 #endif
 
 #endif

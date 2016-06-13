@@ -6,7 +6,7 @@
 
 #include "TemporaryScene.h"
 #include "SceneUserManager.h"
-
+#include "SceneMap.h"
 
 ProcWorldHandler::ProcWorldHandler()
 {
@@ -20,14 +20,28 @@ ProcWorldHandler::~ProcWorldHandler()
 void ProcWorldHandler::ReqEnterScene(BaseSession* pSession, const NetMsgHead* pMsg,int32 nSize)
 {
 	const W2SReqEnterScene* packet = static_cast<const W2SReqEnterScene*>(pMsg);
-	bool bCanEnter = TemporaryScene::Instance()->PreEnterUser(packet->nSceneID, packet->nPram0, packet->nPram1, packet->nPram2);
-	if (!bCanEnter) 
+
+	SceneMap* pEnterScene = SceneMapManager::Instance()->GetSceneMap(packet->nSceneID);
+	if (pEnterScene == NULL)
 	{
-		// 不可以进入
-		FLOG_INFO("Cann't enter this scene,because condition is notgought!");
+		FLOG_INFO("EnterScene Fail,Not Found SceneID:%d", packet->nSceneID);
 		return;
 	}
-	TemporaryScene::Instance()->EnterUser(packet->nSessionID,packet->nCharacterID,packet->nSceneID,packet->nDpServerID,packet->nFepServerID);
+
+	ServerSession* dpSession = ServerSessionMgr::Instance()->GetSession(packet->nDpServerID);
+	if (dpSession == NULL)
+	{
+		ASSERT(dpSession);
+		return;
+	}
+
+	S2DLoadCharacter sMsgLoad;
+	sMsgLoad.nSessionID = packet->nSessionID;
+	sMsgLoad.nCharacterID = packet->nCharacterID;
+	sMsgLoad.nDpServerID = packet->nDpServerID;
+	sMsgLoad.nFepServerID = packet->nFepServerID;
+	sMsgLoad.nEnterType = packet->nEnterType;
+	dpSession->SendMsg(&sMsgLoad, sMsgLoad.GetPackLength());
 }
 
 void ProcWorldHandler::ReqEnterResult(BaseSession* pSession, const NetMsgHead* pMsg, int32 nSize)

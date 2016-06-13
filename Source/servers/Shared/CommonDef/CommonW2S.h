@@ -160,32 +160,26 @@ enum EProW2Ls
 
 enum EProW2Ss
 {
-	PRO_W2S_ReqEnterScene = PRO_W2S_BASE + 0, // 请求进入场景 
+	PRO_W2S_ReqTransfer = PRO_W2S_BASE + 0, // 请求进入场景 
 	PRO_W2S_RepEnterResult = PRO_W2S_BASE + 1, // 请求场景结果  
 };
 
 struct W2SReqEnterScene : public NetMsgHead
 {
-
 	int64 nCharacterID;
 	int32 nSceneID;
 	int32 nDpServerID;
 	int32 nFepServerID;
-
-	int32 nPram0;
-	int32 nPram1;
-	int32 nPram2;
-
-	W2SReqEnterScene():NetMsgHead(PRO_W2S_ReqEnterScene)
+	int32 nEnterType; // 0 首次进入,1更改场景 
+	stEnterSceneParam stParam;
+	W2SReqEnterScene():NetMsgHead(PRO_W2S_ReqTransfer)
 	{
-		nCharacterID = nSceneID = nDpServerID = nFepServerID = 0;
-		nPram0 = nPram1 = nPram2 = 0;
+		nCharacterID = nSceneID = nDpServerID = nFepServerID = nEnterType = 0;
 	}
 	inline int32 GetPackLength()const
 	{
 		return sizeof(*this);
 	}
-
 };
 
 struct W2SRepEnterResult : public NetMsgHead

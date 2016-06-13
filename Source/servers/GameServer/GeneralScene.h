@@ -24,9 +24,11 @@ public:
 	GeneralScene(SceneMap& rSceneMap);
 	~GeneralScene(void);
 
-	virtual bool CheckEnter(int32 nPram0, int32 nPram1, int32 nPram2);
+	virtual bool CheckEnter(const stEnterSceneParam& param);
 
 	virtual bool Enter(SceneUser* pUser);
+
+	virtual void Leave(SceneUser* pUser);
 
 public:
 

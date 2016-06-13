@@ -18,7 +18,7 @@ public:
 public:
 	char			m_arrSql[DB_MAX_SQL];
 	void*			m_pData;
-	MyDBCallBack*	m_pCallBack;
+	DBQueryFunc*	m_queryFunc;
 };
 
 #endif

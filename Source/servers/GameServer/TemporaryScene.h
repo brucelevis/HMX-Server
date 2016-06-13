@@ -69,19 +69,6 @@ public:
 	 *-------------------------------------------*/
 	bool DbLoadData(int32 nCSID,const void* data);
 
-private:
-
-	StTempUserInfo* GetTempUserInfo(int32 nCSID);
-
-	void RemoveTempUser(int32 nCSID);
-
-	//void CheckAndDelTempUser(int32 nCSID);
-
-private:
-
-	std::map<int32,StTempUserInfo>  m_mapUserInfo; //
-
-
 };
 
 

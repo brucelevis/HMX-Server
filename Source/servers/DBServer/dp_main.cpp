@@ -103,7 +103,7 @@ void InteravalIoUpdate(int32 nSrvTime)
 
 	if(__INTERAVAL_ONE_MINUTE__) // 1 分 
 	{
-		MemoryManager::Instance()->Update();
+		DatabaseManager::Instance()->Update();
 	}
 
 	if (__INTERAVAL_ONE_MINUTE__) // 1 分 

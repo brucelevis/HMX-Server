@@ -1,0 +1,3 @@
+用cmake生成项目功能 -x64 MDd
+将生成的libprotobuflibd.lib 放到Source/dependence/protobuf/lib/Debug/下
+将src下的文件（引用文件）拷贝到Sorce/dependence/protobuf/include/下

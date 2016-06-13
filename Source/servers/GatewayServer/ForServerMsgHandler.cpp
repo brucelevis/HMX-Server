@@ -100,7 +100,7 @@ void ForServerMsgHandler::ServerToClient(BaseSession* pSessioin,const NetMsgHead
 	if(pClientSession == NULL)
 	{
 		ASSERT(0);
-		FLOG_ERROR(__FUNCTION__,__LINE__,"Not Found ClientSession id: %d",pHead->nSessionID);
+		FLOG_ERROR("Not Found ClientSession id: %d",pHead->nSessionID);
 		return;
 	}
 	pClientSession->SendMsg(const_cast<NetMsgHead*>(pHead),nSize);

@@ -251,8 +251,8 @@ void NetClient::OnUpdateRecived()
 			{
 				m_rGameSocket.AddEvent(pMsg->stEvent);
 			}
-			m_rGameSocket.RemoveMsg(PACKAGE_HEADER_SIZE + nBodyLen);
 		}
+		m_rGameSocket.RemoveMsg(PACKAGE_HEADER_SIZE + nBodyLen);
 	}
 	break;
 	case MSG_READ_WAITTING:

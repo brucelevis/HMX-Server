@@ -124,7 +124,7 @@ bool DbMysql::IsOpen()
 /*
 SQL替换字符串，确保数据库安全 
 */
-void DbMysql::wsSQLReplaceStr(char *to,const char *from,unsigned long length)
+void DbMysql::WsSQLReplaceStr(char *to,const char *from,unsigned long length)
 {
 	// 暂时还不知道该替换些啥，先原样返回就好了 
 	to[0] = '\0';
@@ -150,7 +150,7 @@ int32 DbMysql::OnThreadProcess()
 		m_queAsyncSQLRequest.pop();
 		m_cQueueMutex.unlock();
 
-		if(pRequest->m_pCallBack == NULL)
+		if(pRequest->m_queryFunc == NULL)
 		{
 			m_cDBMutex.lock();
 			if ( mysql_query( m_pMysql, pRequest->m_arrSql) != 0 )
@@ -189,7 +189,7 @@ int32 DbMysql::OnThreadProcess()
 			DbResult* pResult = new DbResult();
 			pResult->m_bFlag		= true;
 			pResult->m_pRecordSet	= pRecordSet;
-			pResult->m_pCallResult = pRequest->m_pCallBack;
+			pResult->m_pCallResult = pRequest->m_queryFunc;
 
 			S_SAFE_DELETE(pRequest);
 
@@ -245,7 +245,7 @@ void DbMysql::Escape(char* pOutSql,const char* pInSql)
 	mysql_real_escape_string(m_pMysql,pOutSql,pInSql,::strlen(pInSql));
 }
 
-bool DbMysql::ExecAsyncSQL(const char* pszSQL, MyDBCallBack* pCallBack)
+bool DbMysql::ExecSQLAsync(const char* pszSQL, DBQueryFunc* queryFun)
 {
 	if ( !this->IsOpen() )
 		return false;
@@ -270,13 +270,59 @@ bool DbMysql::ExecAsyncSQL(const char* pszSQL, MyDBCallBack* pCallBack)
 		return false;
 	}
 
-	pRequest->m_pCallBack = pCallBack;
+	pRequest->m_queryFunc = queryFun;
 	strncpy( pRequest->m_arrSql , pszSQL , ::strlen(pszSQL));
 
 	m_cQueueMutex.lock();
 	m_queAsyncSQLRequest.push( pRequest );
 	m_cQueueMutex.unlock();
 
+	return true;
+}
+
+bool DbMysql::ExecSelectAsync(const char* tableName, const dbCol *column, const char *where, const char *order, DBQueryFunc* queryFun)
+{
+	if (tableName == NULL || column == NULL)
+	{
+		printf("MysqlClientHandle::exeSelect null pointer error.\n");
+		return false;
+	}
+
+	std::string sql = CreateSelectSql(tableName, column, where, order);
+	if (sql.empty())
+	{
+		printf("MysqlClientHandle::FetchSelectSql null pointer error.\n");
+		return false;
+	}
+
+	DbRequest* pRequest = new DbRequest;
+	if (pRequest == NULL) {
+		cout << "memory (new dbRequest) allocating failed." << endl;
+		return false;
+	}
+
+	pRequest->m_queryFunc = queryFun;
+	strncpy(pRequest->m_arrSql, sql.c_str(), ::strlen(sql.c_str()));
+
+	m_cQueueMutex.lock();
+	m_queAsyncSQLRequest.push(pRequest);
+	m_cQueueMutex.unlock();
+
+	return true;
+}
+
+bool DbMysql::ExecInsertAsync(const char* tableName, const dbCol *column, const char *data, DBQueryFunc* queryFun)
+{
+	return true;
+}
+
+bool DbMysql::ExecDeleteAsync(const char* tableName, const char *where, DBQueryFunc* queryFun)
+{
+	return true;
+}
+
+bool DbMysql::ExecUpdateAsync(const char* tableName, const dbCol *column, const char *data, DBQueryFunc* queryFun)
+{
 	return true;
 }
 
@@ -488,7 +534,7 @@ int32 DbMysql::ExecInsert(const char *tableName,const dbCol *column,const char *
 					len = (len > temp->size) ? temp->size : len;
 					char* strData=new char[len * 2 + 1];
 					strData[0] = '\0';
-					wsSQLReplaceStr(strData,(char *)(data+offset),len);
+					WsSQLReplaceStr(strData,(char *)(data+offset),len);
 					strSql << "\'" << strData << "\'";
 					delete[] strData;
 				}
@@ -498,7 +544,7 @@ int32 DbMysql::ExecInsert(const char *tableName,const dbCol *column,const char *
 					// [ranqd] SQLServer对二进制数据的处理不能直接放到SQL语句中，先把数据放到ltBind容器，后面执行SQL前再绑定 
 					BDATA td;					
 					//td.pData = new char[temp->size * 2 + 1];
-					wsSQLReplaceStr( td.pData,(char *)(data+offset),temp->size );
+					WsSQLReplaceStr( td.pData,(char *)(data+offset),temp->size );
 					td.len = temp->size;
 					ltBind.push_back(td);
 					strSql << "?";
@@ -545,7 +591,7 @@ int32 DbMysql::ExecUpdate(const char *tableName,const dbCol *column,const char *
 		printf("MysqlClientHandle::exeUpdate null pointer error.\n");
 		return (DWORD)-1;
 	}
-	out_sql << "UPDATE [" << tableName << "] SET ";
+	out_sql << "UPDATE " << tableName << " SET ";
 	temp = column;
 	bool first=true;
 	int offset=0;
@@ -591,7 +637,7 @@ int32 DbMysql::ExecUpdate(const char *tableName,const dbCol *column,const char *
 					DWORD len=strlen((char *)(data+offset));
 					len = (len > temp->size) ? temp->size : len;
 					char* strData=new char[len * 2 + 1];
-					wsSQLReplaceStr( strData,(char *)(data+offset),len );
+					WsSQLReplaceStr( strData,(char *)(data+offset),len );
 					out_sql << "\'" << strData << "\'";
 					delete[] strData;
 				}
@@ -600,7 +646,7 @@ int32 DbMysql::ExecUpdate(const char *tableName,const dbCol *column,const char *
 				{ 
 					// [ranqd] SQLServer对二进制数据的处理不能直接放到SQL语句中，先把数据放到ltBind容器，后面执行SQL前再绑定 
 					//  td.pData = new char[temp->size * 2 + 1]; 
-					wsSQLReplaceStr( td.pData,(char *)(data+offset),temp->size );
+					WsSQLReplaceStr( td.pData,(char *)(data+offset),temp->size );
 					td.len = temp->size;
 					ltBind.push_back(td);
 					out_sql << "?";
@@ -613,7 +659,7 @@ int32 DbMysql::ExecUpdate(const char *tableName,const dbCol *column,const char *
 					// [ranqd] SQLServer对二进制数据的处理不能直接放到SQL语句中，先把数据放到ltBind容器，后面执行SQL前再绑定 
 					BDATA td;
 					//  td.pData = new char[size * 2 + 1];
-					wsSQLReplaceStr( td.pData,(char *)(data+offset),size );
+					WsSQLReplaceStr( td.pData,(char *)(data+offset),size );
 					td.len = size;
 					ltBind.push_back(td);
 					out_sql << "?";

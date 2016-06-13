@@ -6,6 +6,7 @@
 #include "CommonInternal.h"
 #include "CommonBags.h"
 #include "CommonQuest.h"
+#include "DbConfig.h"
 
 
 /*-------------------------------------------------------------------
@@ -22,7 +23,7 @@
  *			与数据库中SP_GET_CHARACTER中Select 对应就可，其他地方不用改 
  * @Author:hzd 2015:11:2
  *------------------------------------------------------------------*/
-struct StCharacterDataTable
+struct StCharacterTable
 {
 	int64 nCharID;
 	int32 nServerID;
@@ -44,11 +45,6 @@ struct StCharacterDataTable
 	// 大小固定后不能再进行修改，增加数据，需要用预留数据 
 	union BinData
 	{
-		// 
-		struct
-		{
-			int32 a;
-		};
 
 		BinData()
 		{
@@ -59,7 +55,7 @@ struct StCharacterDataTable
 
 	BinData binData;
 
-	StCharacterDataTable()
+	StCharacterTable()
 	{
 		memset(this,0,sizeof(*this));
 	}
@@ -68,6 +64,10 @@ struct StCharacterDataTable
 	{
 		return sizeof(*this);
 	}
+
+	// 字段数组 
+	static const dbCol fields[];
+
 };
 
 
@@ -82,7 +82,7 @@ struct StCharacterDataTable
 struct StUserDataForDp
 {
 	// Character
-	StCharacterDataTable sCharacterTable;
+	StCharacterTable sCharacterTable;
 
 	// Object
 	StObjectsDataTable sObjectsTable;
@@ -90,7 +90,7 @@ struct StUserDataForDp
 	// Quest
 	StQuestDataTable sQuestTable;
 
-	void LoadCharacterDataForDp(const StCharacterDataTable& pData)
+	void LoadCharacterDataForDp(const StCharacterTable& pData)
 	{
 		memcpy(&sCharacterTable,&pData,sizeof(sCharacterTable));
 	}
@@ -115,12 +115,12 @@ struct StUserDataForDp
 struct StUserDataForSs
 {
 	// Character
-	StCharacterDataTable sCharacterTable;
+	StCharacterTable sCharacterTable;
 
 	// Quest
 	StQuestDataTable sQuestTable;
 
-	void LoadCharacterData(const StCharacterDataTable& dataDp)
+	void LoadCharacterData(const StCharacterTable& dataDp)
 	{
 		memcpy(&sCharacterTable,&dataDp,sizeof(sCharacterTable));
 	}
@@ -165,7 +165,7 @@ struct StUserDataForWs
 		return sizeof(*this);
 	}
 
-	void LoadData(const StCharacterDataTable& dataDp)
+	void LoadData(const StCharacterTable& dataDp)
 	{
 		nCharID = dataDp.nCharID;
 		nServerID = dataDp.nServerID;

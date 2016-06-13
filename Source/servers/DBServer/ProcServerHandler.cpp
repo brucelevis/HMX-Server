@@ -9,6 +9,9 @@
 #include "../DyNetSocket/NetIncludes.h"
 #include "../Shared/CommonDef/SharedIncludes.h"
 
+#include "character.pb.h"
+#include "google/protobuf/io/coded_stream.h"
+
 ProcServerHandler::ProcServerHandler(void)
 {
 }
@@ -24,7 +27,7 @@ void ProcServerHandler::ReqNamesList(BaseSession* pBaseSession, const NetMsgHead
 	IDbBase* pDB = DbConnManager::Instance()->GetMainDB();
 	ASSERT(pDB);
 
-	struct MyCallBack : public MyDBCallBack
+	struct MyCallBack : public DBQueryFunc
 	{
 		BaseSession* pBaseSession;
 		virtual void QueryResult(IDbRecordSet* pSet, int32 nCount)
@@ -50,26 +53,24 @@ void ProcServerHandler::ReqNamesList(BaseSession* pBaseSession, const NetMsgHead
 	};
 
 	MyCallBack* myCallBack = new MyCallBack(pBaseSession);
+	static const dbCol namelist_fields[] = { {"name",DB_STR,32},{NULL,0,0} };
+	pDB->ExecSelectAsync("names_info", namelist_fields, NULL, NULL, myCallBack);
 
-	memset(SQL_BUFFER,0,MAX_SQL_BUFFER);
-	SPRINTF(SQL_BUFFER,"SELECT `name` FROM `names_info` LIMIT 1000;");
-	SQL_BUFFER[ MAX_SQL_BUFFER - 1 ] = '\0';
-	pDB->ExecAsyncSQL(SQL_BUFFER, myCallBack);
 
 }
 
 void ProcServerHandler::ReqAccountLogin(BaseSession* pBaseSession, const NetMsgHead* pMsg,int32 nSize)
 {
 
-	const L2DAccountLogin* pPacket = static_cast<const L2DAccountLogin*>(pMsg);
+	const L2DAccountLogin* packet = static_cast<const L2DAccountLogin*>(pMsg);
 
-	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(pPacket->nSessionID);
+	ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(packet->nSessionID);
 	ASSERT(pClientSession);
 
 	IDbBase* pDB = DbConnManager::Instance()->GetMainDB();
 	ASSERT(pDB);
 
-	struct MyCallBack : public MyDBCallBack
+	struct MyCallBack : public DBQueryFunc
 	{
 		ClientSession* pClientSession;
 		virtual void QueryResult(IDbRecordSet* pSet, int32 nCount)
@@ -94,7 +95,7 @@ void ProcServerHandler::ReqAccountLogin(BaseSession* pBaseSession, const NetMsgH
 			D2LAccountLogin sMsg;
 			sMsg.nAccountId = 0;
 			sMsg.nResult = D2LAccountLogin::E_RESULT_FAIL;
-			pClientSession->SendMsg(&sMsg, sMsg.GetPackLength());
+			pClientSession->SendMsgToLs(&sMsg, sMsg.GetPackLength());
 		}
 
 		MyCallBack(ClientSession* _pClientSession) :pClientSession(_pClientSession)
@@ -103,11 +104,11 @@ void ProcServerHandler::ReqAccountLogin(BaseSession* pBaseSession, const NetMsgH
 	};
 
 	MyCallBack* myCallBack = new MyCallBack(pClientSession);
-	
-	memset(SQL_BUFFER,0,MAX_SQL_BUFFER);
-	SPRINTF(SQL_BUFFER,"SELECT `id` FROM `account_info` WHERE `username`='%s' AND `password`='%s';",pPacket->arrAccount,pPacket->arrPassword);
-	SQL_BUFFER[ MAX_SQL_BUFFER - 1 ] = '\0';
-	pDB->ExecAsyncSQL(SQL_BUFFER, myCallBack);
+	memset(SQL_BUFFER, 0, MAX_SQL_BUFFER);
+	SPRINTF(SQL_BUFFER, "`username`='%s' AND `password`='%s';", packet->arrAccount, packet->arrPassword);
+	SQL_BUFFER[MAX_SQL_BUFFER - 1] = '\0';
+	static const dbCol login_fields[] = { { "id",DB_QWORD,64 },{ NULL,0,0 } };
+	pDB->ExecSelectAsync("account_info", login_fields, SQL_BUFFER, NULL, myCallBack);
 	
 }
 
@@ -121,7 +122,7 @@ void ProcServerHandler::ReqRoleCreate(BaseSession* pBaseSession, const NetMsgHea
 	IDbBase* pDB = DbConnManager::Instance()->GetMainDB();
 	ASSERT(pDB);
 
-	struct MyCallBack : public MyDBCallBack
+	struct MyCallBack : public DBQueryFunc
 	{
 		ClientSession* pClientSession;
 		virtual void QueryResult(IDbRecordSet* pSet, int32 nCount)
@@ -149,61 +150,86 @@ void ProcServerHandler::ReqRoleCreate(BaseSession* pBaseSession, const NetMsgHea
 		nServerID,rev->nAccountID,rev->arrName,rev->nType,nLandMapID,nLandX,nLandY,nRed,nBlue,MAX_ROLE_TYPE_COUNT,nNow);
 
 	SQL_BUFFER[ MAX_SQL_BUFFER - 1 ] = '\0';
-	pDB->ExecAsyncSQL(SQL_BUFFER, myCallBack);
+	pDB->ExecSQLAsync(SQL_BUFFER, myCallBack);
 
 }
 
 void ProcServerHandler::ReqLoadCharacter(BaseSession* pBaseSession, const NetMsgHead* pMsg,int32 nSize)
 {
 	const S2DLoadCharacter* packet = static_cast<const S2DLoadCharacter*>(pMsg);
-	StUserDataForDp* pUserMem = MemoryManager::Instance()->GetUser(packet->nCharID);
-	if(pUserMem == NULL)
+	StCharacterTable* pUserData = DatabaseManager::GetCharacterMemory().GetData(packet->nCharacterID);
+	if (pUserData == NULL)
 	{
-		FLOG_WARRING(__FUNCTION__,__LINE__,"Not Found UserMem!");
+		FLOG_WARRING("Not Found User Mem!");
 		return;
 	}
 
 	// 发送到场景中去 
-	D2SLoadCharacter sMsg;
-	sMsg.sUserData.LoadCharacterData(pUserMem->sCharacterTable);
-	sMsg.sUserData.LoadQuestData(pUserMem->sQuestTable);
 
-	// 这种方式发送更直接，如果传过来又需要回去的，这更直接 
-	sMsg.nSessionID = packet->nSessionID;
-	pBaseSession->SendMsg(&sMsg,sMsg.GetPackLength());
+	::protobuf::Character charbuf;
+	charbuf.set_db_id(0);
+	charbuf.set_char_id(pUserData->nCharID);
+	charbuf.set_server_id(pUserData->nServerID);
+	charbuf.set_account_id(pUserData->nAccountID);
+	charbuf.set_name(pUserData->arrName);
+	charbuf.set_type(pUserData->nType);
+	charbuf.set_exp(pUserData->nExp);
+	charbuf.set_level(pUserData->nLevel);
+	charbuf.set_land_mapid(pUserData->nLandMapId);
+	charbuf.set_land_x(pUserData->nLandX);
+	charbuf.set_land_y(pUserData->nLandY);
+	charbuf.set_instance_mapid(pUserData->nInstanceMapId);
+	charbuf.set_instance_x(pUserData->nInstanceX);
+	charbuf.set_instance_y(pUserData->nInstanceY);
+	charbuf.set_red(pUserData->nRed);
+	charbuf.set_blue(pUserData->nBlue);
 
-	// 不太允许采用下面这种方式，很大可能会出错，比如加载数据不是自己，而是别人的，则就会发到别人的场景中去 
-	// 
-	// 这种方式也可，如果在更改场景ID，由WS通知不及时或出问题，则会发到上一次场景（这是错误的） 
-	//ClientSession* pClientSession = ClientSessionMgr::Instance()->GetSession(packet->nClientSessionID);
-	//if(pClientSession == NULL)
-	//{
-	//	ASSERT(pClientSession);
-	//	return ;
-	//}
-	//pClientSession->SendMsgToSs(&sMsg,sMsg.GetPackLength());
+	D2SLoadCharacter charMsg;
+	charMsg.nSessionID = packet->nSessionID;
+	charMsg.nDpServerID = packet->nDpServerID;
+	charMsg.nFepServerID = packet->nFepServerID;
+	charMsg.nEnterType = packet->nEnterType;
+	charMsg.nByteSize = charbuf.ByteSize();
+	charbuf.SerializeToArray((::google::protobuf::uint8*)charMsg.arrByte, charMsg.nByteSize);
+	pBaseSession->SendMsg(&charMsg, charMsg.GetPackLength());
 
 }
 
 void ProcServerHandler::ReqSaveCharacter(BaseSession* pBaseSession, const NetMsgHead* pMsg,int32 nSize)
 {
-	const S2DSaveUserAllData* packet = static_cast<const S2DSaveUserAllData* >(pMsg);
+	const S2DSaveCharacter* packet = static_cast<const S2DSaveCharacter*>(pMsg);
 
-	StUserDataForDp* pUserMem = MemoryManager::Instance()->GetUser(packet->nCharID);
-	if(pUserMem == NULL)
+	::protobuf::Character character;
+	character.ParseFromArray(packet->arrByte, packet->nByteSize);
+
+	int64 nCharID = character.char_id();
+
+	StCharacterTable* data = DatabaseManager::GetCharacterMemory().GetData(nCharID);
+
+	if(data == NULL)
 	{
-		FLOG_WARRING(__FUNCTION__,__LINE__,"Not Found UserMem!");
+		FLOG_WARRING(__FUNCTION__,__LINE__,"Not Found StCharacterTable char_id:%lld!", nCharID);
 		return;
 	}
 
-	const StUserDataForSs& sUserData = packet->sUserData;
+	strncpy(data->arrName, character.name().c_str(), MAX_NICK_LENGTH);
+	data->nType = character.type();
+	data->nExp = character.exp();
+	data->nLevel = character.level();
+	data->nLandMapId = character.land_mapid();
+	data->nLandX = character.land_x();
+	data->nLandY = character.land_y();
+	data->nInstanceMapId = character.instance_mapid();
+	data->nInstanceX = character.instance_x();
+	data->nInstanceY = character.instance_y();
+	data->nRed = character.red();
+	data->nBlue = character.blue();
 
-	// 如何做到保存部分表 
-	memcpy(&pUserMem->sCharacterTable,&sUserData.sCharacterTable,sizeof(sUserData.sCharacterTable));
-	memcpy(&pUserMem->sQuestTable,&sUserData.sQuestTable,sizeof(sUserData.sQuestTable));
+	memset(data->binData.revser, 0, sizeof(MAX_BINARY_SIZE));
+	const ::protobuf::BinaryData& binData = character.binary_data();
+	binData.SerializeToArray(&data->binData.revser, binData.ByteSize());
 
-	MemoryManager::Instance()->Modifyed(packet->nCharID);
-
+	DatabaseManager::GetCharacterMemory().Midify(nCharID);
 }
 
 void ProcServerHandler::ReqSaveMixItemNumber(BaseSession* pBaseSession, const NetMsgHead* pMsg,int32 nSize)
@@ -213,7 +239,7 @@ void ProcServerHandler::ReqSaveMixItemNumber(BaseSession* pBaseSession, const Ne
 	// 做简单检查 
 	if(packet->nType <= E_MIXITEM_NUMBER_TYPE_NULL || packet->nType >= E_MIXITEM_NUMBER_TYPE_MAX )
 	{
-		FLOG_ERROR(__FUNCTION__,__LINE__,"ReqSaveMixItemNumber Args Error!");
+		FLOG_ERROR("ReqSaveMixItemNumber Args Error!");
 		return ;
 	}
 
@@ -227,7 +253,7 @@ void ProcServerHandler::QueryCharacterList(ClientSession* pClientSession,int64 n
 	IDbBase* pDB = DbConnManager::Instance()->GetMainDB();
 	ASSERT(pDB);
 
-	struct MyCallBack : public MyDBCallBack
+	struct MyCallBack : public DBQueryFunc
 	{
 		ClientSession* pClientSession;
 		virtual void QueryResult(IDbRecordSet* pSet, int32 nCount)
@@ -244,7 +270,7 @@ void ProcServerHandler::QueryCharacterList(ClientSession* pClientSession,int64 n
 				}
 				else
 				{
-					FLOG_ERROR(__FUNCDNAME__, __LINE__, "Role number too more!");
+					FLOG_ERROR("Role number too more!");
 				}
 			}
 			pClientSession->SendMsgToLs(&sMsg, sMsg.GetPackLength());
@@ -257,17 +283,29 @@ void ProcServerHandler::QueryCharacterList(ClientSession* pClientSession,int64 n
 
 	MyCallBack* myCallBack = new MyCallBack(pClientSession);
 
-	memset(SQL_BUFFER,0,MAX_SQL_BUFFER);
-	if(nAccountID > 0 && nCharacterID > 0)
-		SPRINTF(SQL_BUFFER,"SELECT `char_id`,`server_id`,`account_id`,`name`,`type`,`level`,`land_mapid`,`land_x`,`land_y`,`red`,`blue` FROM `user_info` WHERE `account_id`=%lld AND `char_id`=%lld;",nAccountID,nCharacterID);
-	if(nAccountID > 0)
-		SPRINTF(SQL_BUFFER,"SELECT `char_id`,`server_id`,`account_id`,`name`,`type`,`level`,`land_mapid`,`land_x`,`land_y`,`red`,`blue` FROM `user_info` WHERE `account_id`=%lld;",nAccountID);
-	else if(nCharacterID > 0)
-		SPRINTF(SQL_BUFFER,"SELECT `char_id`,`server_id`,`account_id`,`name`,`type`,`level`,`land_mapid`,`land_x`,`land_y`,`red`,`blue` FROM `user_info` WHERE `char_id`=%lld;",nCharacterID);
+	memset(SQL_BUFFER, 0, MAX_SQL_BUFFER);
+	if (nAccountID > 0 && nCharacterID > 0)
+		SPRINTF(SQL_BUFFER, "`account_id`=%lld AND `char_id`=%lld;", nAccountID, nCharacterID);
+	if (nAccountID > 0)
+		SPRINTF(SQL_BUFFER, "`account_id`=%lld;", nAccountID);
+	else if (nCharacterID > 0)
+		SPRINTF(SQL_BUFFER, "`char_id`=%lld;", nCharacterID);
 	else
 		return;
+
 	SQL_BUFFER[ MAX_SQL_BUFFER - 1 ] = '\0';
-	pDB->ExecAsyncSQL(SQL_BUFFER, myCallBack);
+
+	static const dbCol login_fields[] = {
+		{ "char_id",DB_QWORD,8 },
+		{ "server_id",DB_DWORD,4 },
+		{ "account_id",DB_QWORD,4 },
+		{ "name",DB_STR,32 },
+		{ "type",DB_DWORD,4 },
+		{ "level",DB_DWORD,4 },
+		{ NULL,0,0 }
+	};
+
+	pDB->ExecSelectAsync("character_info", login_fields,SQL_BUFFER,NULL, myCallBack);
 }
 
 void ProcServerHandler::DbRoleCreate(void* pSession,const void* pData)
@@ -281,7 +319,7 @@ void ProcServerHandler::DbRoleCreate(void* pSession,const void* pData)
 	};
 #pragma pack(pop)
 
-	ClientSession* pClientSession = static_cast<ClientSession*>(pSession);
+	ClientSession* pCSession = static_cast<ClientSession*>(pSession);
 	const DbRecordSet* pRecordSet = static_cast<const DbRecordSet*>(pData);
 	const StCreateResult* pCreateResult = static_cast<const StCreateResult*>(pRecordSet->GetRecordData(0));
 	int64  nNewID = pCreateResult->nNewCharID;
@@ -306,8 +344,8 @@ void ProcServerHandler::DbRoleCreate(void* pSession,const void* pData)
 	{
 		sMsg.nNewCharID = nNewID;
 		sMsg.nResult = D2LRoleCreateResult::E_SUCCESS;
-		QueryCharacterList(pClientSession,nAccountID,0);
+		QueryCharacterList(pCSession,nAccountID,0);
 	}
-	pClientSession->SendMsgToLs(&sMsg,sMsg.GetPackLength());
+	pCSession->SendMsgToLs(&sMsg,sMsg.GetPackLength());
 
 }

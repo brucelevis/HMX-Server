@@ -11,6 +11,7 @@
 
 #include "SceneUserCtrl.h"
 #include "QuestCtrl.h"
+#include "character.pb.h"
 
 /*
  *
@@ -30,7 +31,7 @@ class SceneUserManager : public BaseSingle<SceneUserManager>
 public:
 
 	// 添加角色 
-	SceneUser* AddUser(int32 nCSID,int64 nUID,ClientSession* pClientSession,const StUserDataForSs* userData);
+	SceneUser* AddUser(ClientSession* pClientSession,const ::protobuf::Character& charactor);
 
 	// 删除角色 
 	void RemoveUser(int64 nUID);

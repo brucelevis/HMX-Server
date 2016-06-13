@@ -196,6 +196,16 @@ public:
 	 *------------------------------------------------------------------*/
 	void SetSessionFinished();
 
+	void BreakUpdateIO()
+	{
+		if (m_pSocket) m_pSocket->BreakUpdateIO();
+	}
+
+	void UnBreakUpdateIO()
+	{
+		if (m_pSocket) m_pSocket->UnBreakUpdateIO();
+	}
+
 protected:
 
 private:
@@ -224,7 +234,7 @@ private:
 class ServerSessionMgr : public BaseSingle<ServerSessionMgr>
 {
 	typedef map<int32,ServerSession*>	SocketIDSessionMapType;	// 连接上来的Socket临时记录() 
-	typedef map<int32,ServerSession*>	ServerIdSessionMapType;	// 已经登录创建的ServerSession 
+	typedef map<int32,ServerSession*>	ServerIdSessionMapType;	// 已经登录创建的ServerSession(对方的serverID=>xx) 
 public:
 
 	ServerSessionMgr();

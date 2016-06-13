@@ -133,6 +133,11 @@ public:
 		return m_sScenesInfo;
 	}
 
+	int32 GetLocalServerID()
+	{
+		return m_sLocalInfo.nID;
+	}
+
 private:
 
 	EServerType m_eServerType;

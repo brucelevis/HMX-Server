@@ -28,7 +28,7 @@ public:
 
 	//////////////////////////////////////////////////////////////////////////
 
-	void CallBackSelectRole(int32 nCSID, StUserDataForDp* pUserDataMemory);
+	void CallBackSelectRole(int32 nCSID, StCharacterTable* pUserDataMemory);
 	
 
 };

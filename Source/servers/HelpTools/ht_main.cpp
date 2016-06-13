@@ -11,6 +11,10 @@
 
 #include "StockCrawl.h"
 
+#include "google/protobuf/io/coded_stream.h"
+#include "character.pb.h"
+
+
 /*
 *
 *  Detail: 程序主入口 936字符 
@@ -35,15 +39,32 @@ void SinaStock(const char* nCode);
 
 int main(int argc, const char * argv[])
 {
-	// 初始化服务器所都要准备好的数据 
-	bool bResult = Init();
 
-	if(!bResult)
-	{
-		//FLOG_INFO("Init Fail");
-		ASSERT(0);
-		return 0;
-	}
+	::protobuf::Character charter;
+	charter.set_char_id(100);
+
+	int32 bytesize = 0;
+	char bytes[1024];
+	memset(bytes, 0, sizeof(bytes));
+	bytesize = charter.ByteSize();
+	charter.SerializeWithCachedSizesToArray((::google::protobuf::uint8*)bytes);
+
+	::google::protobuf::io::CodedInputStream inputChar((::google::protobuf::uint8*)bytes,bytesize);
+
+	::protobuf::Character charter2;
+	charter2.MergePartialFromCodedStream(&inputChar);
+
+	printf("charid=%lld\n",charter2.char_id());
+
+	// 初始化服务器所都要准备好的数据 
+	//bool bResult = Init();
+
+	//if(!bResult)
+	//{
+	//	//FLOG_INFO("Init Fail");
+	//	ASSERT(0);
+	//	return 0;
+	//}
 
 	return 0;
 }

@@ -10,12 +10,14 @@ file(GLOB_RECURSE sources_Utility_CC Utility/*.cc)
 file(GLOB_RECURSE sources_Utility_CPP Utility/*.cpp)
 
 include_directories(
-
+  ${MYSQL_INCLUDE_DIR}
   ${BOOST_INCLUDE_DIR}
   ${CMAKE_SOURCE_DIR}/servers/DyNetSocket
+  ${CMAKE_SOURCE_DIR}/servers/DyNetMysql
   ${CMAKE_SOURCE_DIR}/servers/Shared/CommonDef
   ${CMAKE_SOURCE_DIR}/servers/Shared/Protocol
   ${CMAKE_SOURCE_DIR}/servers/Shared/Utility
+  ${PROTOBUL_INCLUDE_DIR}
 )
 
 set(Shared_SRCS

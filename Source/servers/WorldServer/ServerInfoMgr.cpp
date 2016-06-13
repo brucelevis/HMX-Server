@@ -39,7 +39,7 @@ bool ServerInfoMgr::OnServerLogin(ServerSession* pSession,const char arrHost[32]
 	}else
 	{
 		printf("Repeat server_id login %d",nServerID);
-		FLOG_ERROR(__FUNCTION__,__LINE__,"OnServerLogin");
+		FLOG_ERROR("OnServerLogin");
 		return false;
 	}
 }
@@ -55,7 +55,7 @@ void ServerInfoMgr::OffServerLogin(ServerSession* pSession)
 	}else
 	{
 		printf("Not found server_id logout %d",nServerID);
-		FLOG_ERROR(__FUNCTION__,__LINE__,"OffServerLogin");
+		FLOG_ERROR("OffServerLogin");
 		return ;
 	}
 }
@@ -66,7 +66,7 @@ void ServerInfoMgr::UpdateServerInfo(uint32 nServerID,int32 nServerLoad,int32 nC
 	if(it == m_mapServerInfo.end())
 	{
 		printf("ServerID Not Find %d\n",nServerID);
-		FLOG_WARRING(__FUNCTION__,__LINE__,"OnNotifyConnect not found serverID:%d",nServerID);
+		FLOG_WARRING("OnNotifyConnect not found serverID:%d",nServerID);
 	}else
 	{
 		ServerInfo& rInfo = it->second;

@@ -18,6 +18,7 @@ include_directories(
 	
     ${MYSQL_INCLUDE_DIR}
     ${BOOST_INCLUDE_DIR}
+	${PROTOBUL_INCLUDE_DIR}
 )
 
 add_executable(HelpTools
@@ -29,6 +30,7 @@ target_link_libraries(HelpTools
 	LIBMysql
     ${MYSQL_LIBRARIES}
     ${BOOST_LIBRARIES}
+	${LIB_PROTOBUF_DEBUG}
 )
 
 IF(UNIX)

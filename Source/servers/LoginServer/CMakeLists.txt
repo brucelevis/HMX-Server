@@ -17,6 +17,7 @@ include_directories(
 	${CMAKE_SOURCE_DIR}/servers/DyNetMysql
 	
     ${BOOST_INCLUDE_DIR}
+	${MYSQL_INCLUDE_DIR}
 )
 
 add_executable(LoginServer

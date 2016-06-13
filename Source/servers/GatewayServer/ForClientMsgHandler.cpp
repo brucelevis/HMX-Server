@@ -149,7 +149,7 @@ void ForClientMsgHandler::ReqSendToLoginServer(BaseSession* pSession, const NetM
 	// 
 	if(pClientSession->Status() != E_CLIENT_STATUS_NOTIFY_INITED)
 	{
-		FLOG_WARRING(__FUNCTION__,__LINE__,"Status Not Eq E_CLIENT_STATUS_NOTIFY_INITED");
+		FLOG_WARRING("Status Not Eq E_CLIENT_STATUS_NOTIFY_INITED");
 		return;
 	}
 
@@ -167,7 +167,7 @@ void ForClientMsgHandler::ReqSendToSceneServer(BaseSession* pSession, const NetM
 
 	if(pClientSession->Status() != E_CLIENT_STATUS_IN_SCENE)
 	{
-		FLOG_WARRING(__FUNCTION__,__LINE__,"Status Not Eq E_CLIENT_STATUS_IN_SCENE");
+		FLOG_WARRING("Status Not Eq E_CLIENT_STATUS_IN_SCENE");
 		return;
 	}
 
@@ -185,7 +185,7 @@ void ForClientMsgHandler::ReqSendToWorldServer(BaseSession* pSession, const NetM
 	
 	if(pClientSession->Status() <= E_CLIENT_STATUS_ENCRYPTED)
 	{
-		FLOG_WARRING(__FUNCTION__,__LINE__,"Status <= E_CLIENT_STATUS_NOTIFY_INITED");
+		FLOG_WARRING("Status <= E_CLIENT_STATUS_NOTIFY_INITED");
 		return;
 	}
 	

@@ -15,8 +15,9 @@ include_directories(
 	
 	${CMAKE_SOURCE_DIR}/servers/DyNetSocket
 	${CMAKE_SOURCE_DIR}/servers/DyNetMysql
-	
+	${PROTOBUL_INCLUDE_DIR}
     ${BOOST_INCLUDE_DIR}
+	${MYSQL_INCLUDE_DIR}
 )
 
 add_executable(GameServer
@@ -27,6 +28,7 @@ target_link_libraries(GameServer
     Shared
 	LIBSocket
     ${BOOST_LIBRARIES}
+	${LIB_PROTOBUF_DEBUG}
 )
 
 IF(UNIX)
@@ -52,6 +54,8 @@ if( WIN32 )
       POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/ss_cfg.xml $(TargetDir)
 	  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/ss_cfg.xml ${PROJECT_BINARY_DIR}/servers/GameServer
+	  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/ss_cfg_1.xml $(TargetDir)
+	  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/ss_cfg_1.xml ${PROJECT_BINARY_DIR}/servers/GameServer
     )
   endif()
 endif()

@@ -125,7 +125,13 @@ public:
 				bool bResult = pConnMgr->ConnectToServer(rInfo.nServerID, rInfo.nServerType, rInfo.arrHost, rInfo.nPort,
 					boost::bind(&BaseMsgHandler::OnNetMsgEnter, baseMsgHandler, _1),
 					boost::bind(&BaseMsgHandler::OnNetMsg, baseMsgHandler, _1, _2, _3),
-					boost::bind(&BaseMsgHandler::OnNetMsgExit, baseMsgHandler, _1));
+					boost::bind(&BaseMsgHandler::OnNetMsgExit, baseMsgHandler, _1),
+					boost::bind(&BaseMsgHandler::OnEventRemoteClose, baseMsgHandler, _1, _2),
+					boost::bind(&BaseMsgHandler::OnEventRemotePreMsg, baseMsgHandler, _1, _2),
+					boost::bind(&BaseMsgHandler::OnEventRemoteAfterMsg, baseMsgHandler, _1, _2),
+					boost::bind(&BaseMsgHandler::OnEventRemotePreOnlyMsg, baseMsgHandler, _1, _2),
+					boost::bind(&BaseMsgHandler::OnEventRemoteAfterOnlyMsg, baseMsgHandler, _1, _2)
+					);
 				if (!bResult)
 				{
 					printf("Connect Fail!\n");

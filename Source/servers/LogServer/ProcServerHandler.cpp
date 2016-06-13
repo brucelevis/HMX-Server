@@ -34,6 +34,6 @@ void ProcServerHandler::ReqSaveToDb(BaseSession* pBaseSession, const NetMsgHead*
 	pDB->Escape(arrDetail,log->arrDetail);
 	SPRINTF(SQL_BUFFER,"INSERT INTO `log_info` (`servertype`,`starttimes`,`level`,`functionname`,`rownum`,`detail`,`time`) VALUES (%d,%d,%d,'%s',%d,'%s',%d);",log->nServerType,log->nStartTimes,log->nLevel,arrFunctionName,log->nRowNum,arrDetail,log->nTime);
 	SQL_BUFFER[ MAX_SQL_BUFFER - 1 ] = '\0';
-	pDB->ExecAsyncSQL(SQL_BUFFER,NULL);
+	pDB->ExecSQLAsync(SQL_BUFFER,NULL);
 	
 }

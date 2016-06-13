@@ -62,17 +62,15 @@ void Statistic::Update(int32 nSrvTime)
 		pDpSession->SendMsg(&sServerInfo,sServerInfo.GetPackLength());
 
 		// 收集scene_info信息 
-		SceneInfoVectorType o_vecSceneInfo;
-		SceneInfoManager::Instance()->GetSceneInfo(o_vecSceneInfo);
+		std::vector<SceneInfo> o_vecSceneInfo;
+		SceneManager::Instance()->GetSceneInfo(o_vecSceneInfo);
 
 		W2DNotifySceneInfo sSceneInfo;
 		sSceneInfo.nSceneNum = 0;
-		for (SceneInfoVectorType::iterator it = o_vecSceneInfo.begin(); it != o_vecSceneInfo.end();++it)
+		for (std::vector<SceneInfo>::iterator it = o_vecSceneInfo.begin(); it != o_vecSceneInfo.end();++it)
 		{
-			SceneInfo& rSceneInfo = *it;
-			sSceneInfo.arrSceneInfo[sSceneInfo.nSceneNum].nServerID = rSceneInfo.nServerID;
-			sSceneInfo.arrSceneInfo[sSceneInfo.nSceneNum].nSceneID = rSceneInfo.nSceneID;
-			sSceneInfo.arrSceneInfo[sSceneInfo.nSceneNum].nLoadNum = rSceneInfo.nLoadNum;
+			sSceneInfo.arrSceneInfo[sSceneInfo.nSceneNum].nServerID = it->nServerID;
+			sSceneInfo.arrSceneInfo[sSceneInfo.nSceneNum].nSceneID = it->nSceneID;
 			sSceneInfo.nSceneNum++;
 		}
 		pDpSession->SendMsg(&sSceneInfo,sSceneInfo.GetPackLength());

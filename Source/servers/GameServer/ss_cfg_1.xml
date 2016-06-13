@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+	<!-- local -->
+	<local id="4002" host="127.0.0.1" port="9904" type="4"></local>
+	<!-- wsserver -->
+	<remote id="3001" host="127.0.0.1" port="9903" type="3"></remote>
+	<!-- scenes -->
+	<scenes>
+		<scene scene_id="10004"></scene>
+		<scene scene_id="10005"></scene>
+		<scene scene_id="20001"></scene>
+		<scene scene_id="20002"></scene>
+		<scene scene_id="20003"></scene>
+	</scenes>
+</items>

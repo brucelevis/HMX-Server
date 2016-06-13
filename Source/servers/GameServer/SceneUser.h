@@ -12,6 +12,7 @@
 
 #include "SceneUserCtrl.h"
 #include "QuestCtrl.h"
+#include "character.pb.h"
 
 /*
  *
@@ -50,8 +51,11 @@ private:
 
 public:
 
+	// 保存数据 
+	bool Serialize(int32 nScoketEventCode = 0);
+
 	// 加载该玩家所有数据 
-	void LoadAllData(const StUserDataForSs& rData);
+	void UnSerialize(const ::protobuf::Character& character);
 
 	// 位置信息广播 
 	DEFINE_FUNCTION_CHANNEL_BROADCAST(ChannelPosition);
@@ -67,9 +71,6 @@ public:
 
 	// Buff信息广播 
 	DEFINE_FUNCTION_CHANNEL_BROADCAST(ChannelBuff);
-
-	// 保存数据 
-	bool SaveData();
 
 	// 保存切线地图数据 
 	void SaveTransferMapData(uint32 nMapID,int32 nPosX,int32 nPosZ,bool bIsInstance,bool bIsSameSs);
@@ -151,25 +152,20 @@ private:
 
 
 public:
-	void SetClientHadReady()
+	void SetClientStatus(int32 nStatue)
 	{
-		m_bClientReady = true;
+		m_nClientStatus = nStatue;
 	}
-
-	void SetClientBusy()
+	int32 GetClientStatus()
 	{
-		m_bClientReady = false;
-	}
-
-	bool IsClientReady()
-	{
-		return m_bClientReady;
+		return m_nClientStatus;
 	}
 
 private:
 
 	ClientSession*		m_pCSession;		// 会话   
-	bool				m_bClientReady;		// 前端是否准备好(只有准备好才能发送数据) 
+	int32				m_nClientStatus;	// 前端状态 0 ok,1 加载资源中 
+	int32				m_nSaveStatue;		// 0 空闲中，1进行中，不可再保存 
 
 //----------------------------------控制器管理------------------------------------------
 public:

@@ -9,7 +9,6 @@
 #include "ResourceMgr.h"
 #include "ForSClientMsgHandler.h"
 
-
 /*-------------------------------------------------------------------
  * @Brief : 本程序主要设计方向为：以世界地图为设计中心，其他功能都基于
  *			地图(其他框架可能基于主角)，其他物体存放于地图上，以地图向
@@ -43,6 +42,7 @@ void InteravalSceneMapUpdate(int32 nSrvTime);
 //参数 -c cfg.xml -l 日志文件   
 int main(int argc, const char * argv[])
 {
+
 	// 初始化服务器所都要准备好的数据 
 	std::string serverCfgFile;
 	if (argc > 2)

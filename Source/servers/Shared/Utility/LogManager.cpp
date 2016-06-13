@@ -43,7 +43,7 @@ void LogManagerMgr::Normal(const char* str , ...)
 	printf( "LOG:%s \n", sstr );
 	lock.unlock();
 
-	SaveToDb(LOG_LEVEL_NORMAL,"",sstr,0);	
+	SaveToDb(LOG_LEVEL_NORMAL,sstr);	
 
 }
 
@@ -61,10 +61,10 @@ void LogManagerMgr::Info(const char* str , ...)
 	va_end(va);
 	printf( "LOG:%s \n", sstr );
 	lock.unlock();
-	SaveToDb(LOG_LEVEL_INFO,"",sstr,0);
+	SaveToDb(LOG_LEVEL_INFO,sstr);
 }
 
-void LogManagerMgr::Warring(const char* filename,int32 rownum,const char* str , ...)
+void LogManagerMgr::Warring(const char* str , ...)
 {
 	boost::mutex::scoped_lock lock( gMutex );    
 	va_list va;
@@ -78,11 +78,11 @@ void LogManagerMgr::Warring(const char* filename,int32 rownum,const char* str , 
 	va_end(va);
 	printf( "LOG:%s \n", sstr );
 	lock.unlock();
-	SaveToDb(LOG_LEVEL_WARRING,filename,sstr,rownum);
+	SaveToDb(LOG_LEVEL_WARRING,sstr);
 
 }
 
-void LogManagerMgr::Error(const char* filename,int32 rownum,const char* str , ...)
+void LogManagerMgr::Error(const char* str , ...)
 {
 	boost::mutex::scoped_lock lock( gMutex );    
 	va_list va;
@@ -97,19 +97,18 @@ void LogManagerMgr::Error(const char* filename,int32 rownum,const char* str , ..
 	printf( "LOG:%s \n", sstr );
 	lock.unlock();
 
-	SaveToDb(LOG_LEVEL_ERROR,filename,sstr,rownum);
+	SaveToDb(LOG_LEVEL_ERROR,sstr);
 }
 
-void LogManagerMgr::SaveToDb(ELogLevel eLevel,const char* functionname,const char* detail,int32 rownum)
+void LogManagerMgr::SaveToDb(ELogLevel eLevel,const char* detail)
 {
 
 	S2LogMsg sMsg;
 	sMsg.nServerType = m_nServerType;
 	sMsg.nStartTimes = m_nStartTimes;
 	sMsg.nLevel = eLevel;
-	strcpy(sMsg.arrFunctionName,functionname);
 	strcpy(sMsg.arrDetail,detail);
-	sMsg.nRowNum = rownum;
+	sMsg.nRowNum = 0;
 	sMsg.nTime = Utility::NowTime();
 
 	if(m_pLogServer)

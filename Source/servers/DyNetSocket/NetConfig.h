@@ -121,6 +121,17 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> struct
 		return first == _streble.first && second == _streble.second && third == _streble.third && fourth == _streble.fourth && fifth == _streble.fifth;
 	}
 };
+
+/*
+
+普通事件->参数列表
+int32, int32, int32, int32, int64
+事件，唯一编号，客户端sessionid,参数1，参数2
+
+特殊事件(带Only)->参数列表
+事件，监听事件，客户端sessionid,参数1，参数2
+
+*/
 template<typename T1, typename T2, typename T3, typename T4, typename T5> inline EventStreble<T1, T2, T3, T4, T5> make_streble(T1 x, T2 y, T3 z, T4 w, T5 v)
 {
 	return EventStreble<T1, T2, T3, T4, T5>(x, y, z, w, v);

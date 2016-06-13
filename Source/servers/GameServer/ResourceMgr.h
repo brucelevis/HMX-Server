@@ -32,6 +32,8 @@ public:
 
 	const StRoleTypeInitCfg* GetRoleTypeInitInfoRes(int32 nRoleType);
 
+	const StMapInfoResCfg* GetMapInfoCfg(int32 nMapID);
+
 	const StMapZoneResCfg* GetMapZoneRes(int32 nMapID);
 
 private:

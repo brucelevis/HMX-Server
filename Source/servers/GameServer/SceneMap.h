@@ -34,9 +34,6 @@ public:
 
 	// 获得地图ID 
 	int32 MapID(){	return m_nMapId;}
-	
-	// 获得场景 
-	BaseScene* GetBaseScene(){ return m_pBaseScene;}
 
 private:
 
@@ -52,10 +49,7 @@ private:
 
 	SceneRegionManager		m_oRegionManager;	// 管理对象  
 	std::set<Entity*>		m_setEntities;		// 实体对象 
-
 	int32					m_nSceneType;		// 场景类型 
-	BaseScene*				m_pBaseScene;		// 普通场景 
-
 	friend class			SceneMapManager;
 
 };
